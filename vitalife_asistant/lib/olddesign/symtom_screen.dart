@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitalife_asistant/result_screen.dart';
+import 'package:vitalife_asistant/olddesign/result_screen.dart';
 import 'service/gemini_service.dart';
 
 class SymptomScreen extends StatefulWidget {
