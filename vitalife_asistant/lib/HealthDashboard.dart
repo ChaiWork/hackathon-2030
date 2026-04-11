@@ -4,6 +4,8 @@ import 'package:vitalife_asistant/widget/bar.dart';
 import 'package:vitalife_asistant/widget/healthCard.dart';
 import 'package:vitalife_asistant/widget/bottomnavbar.dart';
 
+import 'package:vitalife_asistant/services/gemini_service.dart';
+
 class HealthDashboard extends StatefulWidget {
   const HealthDashboard({super.key});
 
@@ -12,7 +14,7 @@ class HealthDashboard extends StatefulWidget {
 }
 
 class _HealthDashboardState extends State<HealthDashboard> {
-  // Data for the graph - now using a map with day keys
+  // Data for the graph
   Map<String, double> systolicReadings = {
     "Mon": 120,
     "Tue": 180,
@@ -34,13 +36,38 @@ class _HealthDashboardState extends State<HealthDashboard> {
   // Latest readings for tracking
   List<Map<String, dynamic>> allReadings = [];
 
-  int _selectedNavIndex = 0; // Track selected navigation item
+  int _selectedNavIndex = 0;
+
+  // AI Insights
+  String _aiInsight = "Loading AI insights...";
+  bool _isLoadingInsight = false;
+  final GeminiService _geminiService = GeminiService();
 
   @override
   void initState() {
     super.initState();
-    // Add initial reading to history
     _addToHistory(142, 90, 78, 6.8, 98);
+    _initializeGeminiAndGetInsights();
+  }
+
+  Future<void> _initializeGeminiAndGetInsights() async {
+    await _geminiService.initialize();
+    await _getAIInsights();
+  }
+
+  Future<void> _getAIInsights() async {
+    setState(() => _isLoadingInsight = true);
+    try {
+      final insight = await _geminiService.analyzeBloodPressureTrend(
+        systolicReadings,
+        allReadings,
+      );
+      setState(() => _aiInsight = insight);
+    } catch (e) {
+      setState(() => _aiInsight = "AI insights temporarily unavailable.");
+    } finally {
+      setState(() => _isLoadingInsight = false);
+    }
   }
 
   @override
@@ -117,7 +144,76 @@ class _HealthDashboardState extends State<HealthDashboard> {
 
                       const SizedBox(height: 25),
 
-                      /// Alert Box (shows warning if blood pressure is high)
+                      /// NEW: AI Insight Card
+                      Container(
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.blue.withOpacity(0.3),
+                              Colors.purple.withOpacity(0.3),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.blue.withOpacity(0.5),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.auto_awesome,
+                                  color: Colors.blue,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "AI Health Insight",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (!_isLoadingInsight)
+                                  IconButton(
+                                    onPressed: _getAIInsights,
+                                    icon: const Icon(
+                                      Icons.refresh,
+                                      color: Colors.white54,
+                                      size: 18,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_isLoadingInsight)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            else
+                              Text(
+                                _aiInsight,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: isSmallScreen ? 12 : 14,
+                                  height: 1.5,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      /// Alert Box (now enhanced with AI analysis)
                       if (_isBloodPressureHigh(bloodPressure))
                         Container(
                           padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -141,12 +237,26 @@ class _HealthDashboardState extends State<HealthDashboard> {
                               ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: Text(
-                                  "Blood pressure elevated - Check doctor",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isSmallScreen ? 12 : 14,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "⚠️ Blood pressure elevated",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Consult your doctor for personalized advice",
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: isSmallScreen ? 10 : 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -199,8 +309,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
 
                       const SizedBox(height: 20),
 
-                      /// Risk Graph Container
-                      /// Risk Graph Container
+                      /// Risk Graph Container (same as before)
                       Container(
                         padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                         decoration: BoxDecoration(
@@ -233,14 +342,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
                                 ),
                               ],
                             ),
-
-                            const SizedBox(height: 5),
-
                             const SizedBox(height: 5),
                             SizedBox(
-                              height: isSmallScreen
-                                  ? 200
-                                  : 160, // Increased height for better visualization
+                              height: isSmallScreen ? 200 : 160,
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceAround,
@@ -254,7 +358,6 @@ class _HealthDashboardState extends State<HealthDashboard> {
                                   return Column(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      // Value label
                                       if (systolicValue > 0)
                                         Padding(
                                           padding: const EdgeInsets.only(
@@ -271,7 +374,6 @@ class _HealthDashboardState extends State<HealthDashboard> {
                                             ),
                                           ),
                                         ),
-                                      // Bar
                                       Container(
                                         width: isSmallScreen ? 12 : 20,
                                         height: barHeight,
@@ -288,10 +390,10 @@ class _HealthDashboardState extends State<HealthDashboard> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            // Day labels with current day indicator
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: days.map((day) {
+                                // at here loop through days to show day labels and highlight current day
                                 final isToday = _isToday(day);
                                 return Column(
                                   children: [
@@ -321,7 +423,6 @@ class _HealthDashboardState extends State<HealthDashboard> {
                                 );
                               }).toList(),
                             ),
-                            // Add reference line indicators
                             const SizedBox(height: 5),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -366,7 +467,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
                         ),
                       ),
 
-                      /// Latest Readings Section
+                      /// Latest Readings Section (same as before)
                       if (allReadings.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 20),
@@ -471,23 +572,18 @@ class _HealthDashboardState extends State<HealthDashboard> {
                   setState(() {
                     _selectedNavIndex = index;
                   });
-                  // Handle navigation based on index
                   switch (index) {
                     case 0:
-                      // Home
                       break;
                     case 1:
-                      // Chart/Statistics
                       _showStatisticsDialog();
                       break;
                     case 2:
-                      // Medications
                       break;
                     case 3:
-                      // AI Assistant
+                      _showAIInsightsDialog(); // New AI insights dialog
                       break;
                     case 4:
-                      // Profile
                       break;
                   }
                 },
@@ -499,33 +595,23 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
-  /// Show popup dialog to add new measurements
+  // Update the onSave to refresh AI insights
   void _showAddMeasurementDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AddMeasurementDialog(
-          onSave: (Map<String, dynamic> data) {
-            // Handle the saved data
+          onSave: (Map<String, dynamic> data) async {
             setState(() {
-              // Update blood pressure
               bloodPressure = "${data['systolic']}/${data['diastolic']}";
-
-              // Update heart rate
               heartRate = "${data['heartRate']} bpm";
-
-              // Update blood glucose
               bloodGlucose = "${data['glucose']} mmol";
-
-              // Update SpO2
               spo2 = "${data['spo2']} %";
 
-              // Update systolic reading for TODAY only
               String today = _getCurrentDay();
               systolicReadings[today] = data['systolic'].toDouble();
 
-              // Add to history
               _addToHistory(
                 data['systolic'],
                 data['diastolic'],
@@ -533,16 +619,67 @@ class _HealthDashboardState extends State<HealthDashboard> {
                 data['glucose'],
                 data['spo2'],
               );
-
-              // Show success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Measurements added successfully!"),
-                  backgroundColor: Colors.green,
-                ),
-              );
             });
+
+            // Refresh AI insights after new data
+            await _getAIInsights();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Measurements added successfully!"),
+                backgroundColor: Colors.green,
+              ),
+            );
           },
+        );
+      },
+    );
+  }
+
+  // New method to show AI insights dialog
+  void _showAIInsightsDialog() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("AI Health Assistant"),
+          content: FutureBuilder<String>(
+            future: _geminiService.getPersonalizedAdvice(
+              bloodPressure,
+              heartRate,
+              bloodGlucose,
+              spo2,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError) {
+                return Text("Error: ${snapshot.error}");
+              }
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.auto_awesome, color: Colors.blue, size: 40),
+                  const SizedBox(height: 16),
+                  Text(
+                    snapshot.data ?? "Keep up with your health monitoring!",
+                    style: const TextStyle(fontSize: 16, height: 1.5),
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
         );
       },
     );
