@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vitalife_asistant/logic/health_utils.dart';
+import 'package:vitalife_asistant/services/health_service.dart';
 import 'package:vitalife_asistant/widget/add_measurement_dialog.dart';
 import 'package:vitalife_asistant/widget/ai_insight_card.dart';
 import 'package:vitalife_asistant/widget/blood_pressure_graph.dart';
@@ -7,8 +8,12 @@ import 'package:vitalife_asistant/widget/bottomnavbar.dart';
 import 'package:vitalife_asistant/widget/healthCard.dart';
 import 'package:vitalife_asistant/widget/recent_readings_list.dart';
 import 'package:vitalife_asistant/widget/statistics_dialog.dart';
+import 'package:vitalife_asistant/widget/sync_dialog.dart';
+
 import '../models/health_models.dart';
 import '../services/gemini_service.dart';
+
+final HealthService _healthService = HealthService();
 
 class HealthDashboard extends StatefulWidget {
   const HealthDashboard({super.key});
@@ -46,10 +51,16 @@ class _HealthDashboardState extends State<HealthDashboard> {
   final GeminiService _geminiService = GeminiService();
 
   @override
+  @override
   void initState() {
     super.initState();
     _addSampleReading();
     _initializeGemini();
+
+    // ✅ CALL AFTER UI LOAD
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchHealthData();
+    });
   }
 
   void _addSampleReading() {
@@ -69,6 +80,63 @@ class _HealthDashboardState extends State<HealthDashboard> {
   Future<void> _initializeGemini() async {
     await _geminiService.initialize();
     await _refreshAIInsights();
+  }
+
+  Future<void> _fetchHealthData() async {
+    // Show the sync dialog and wait for result
+    final result = await SyncDialog.show(
+      context: context,
+      syncFuture: _healthService.fetchData(),
+    );
+
+    if (result == null) {
+      print("Sync dialog was dismissed");
+      return;
+    }
+
+    if (!result.success) {
+      print("Sync failed: ${result.error}");
+      return;
+    }
+
+    final data = result.data;
+
+    if (data.isEmpty) {
+      print("⚠️ No health data found - empty response from Health Service");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No health data found. Please check your permissions."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      final hr = data["heartRate"];
+      final spo2 = data["spo2"];
+
+      currentMetrics = HealthMetrics(
+        bloodPressure: currentMetrics.bloodPressure,
+        heartRate: (hr != null && hr is num)
+            ? "${hr.toInt()} bpm"
+            : currentMetrics.heartRate,
+        bloodGlucose: currentMetrics.bloodGlucose,
+        spo2: (spo2 != null && spo2 is num)
+            ? "${spo2.toStringAsFixed(0)} %"
+            : currentMetrics.spo2,
+      );
+    });
+    print("✅ UI updated with latest health metrics");
+
+    // Show success snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Health data synced successfully!"),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _refreshAIInsights() async {
@@ -247,6 +315,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
                     children: [
                       _buildHeader(isSmallScreen),
                       const SizedBox(height: 25),
+
                       AIInsightCard(
                         insight: _aiInsight,
                         isLoading: _isLoadingInsight,
@@ -267,6 +336,10 @@ class _HealthDashboardState extends State<HealthDashboard> {
                       ),
                       RecentReadingsList(readings: allReadings),
                       const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _fetchHealthData,
+                        child: const Text("Sync Health Data"),
+                      ),
                     ],
                   ),
                 ),
