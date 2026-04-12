@@ -35,9 +35,9 @@ class HealthReading {
 
 class HealthMetrics {
   final String bloodPressure;
-  final String heartRate;
+  final int heartRate;
   final String bloodGlucose;
-  final String spo2;
+  final int spo2;
 
   HealthMetrics({
     required this.bloodPressure,

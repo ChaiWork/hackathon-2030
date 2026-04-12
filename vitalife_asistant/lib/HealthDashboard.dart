@@ -39,9 +39,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
   // Current metrics
   HealthMetrics currentMetrics = HealthMetrics(
     bloodPressure: "142/90",
-    heartRate: "78 bpm",
+    heartRate: 0,
     bloodGlucose: "6.8 mmol",
-    spo2: "98 %",
+    spo2: 0,
   );
 
   // UI State
@@ -119,14 +119,15 @@ class _HealthDashboardState extends State<HealthDashboard> {
       currentMetrics = HealthMetrics(
         bloodPressure: currentMetrics.bloodPressure,
         heartRate: (hr != null && hr is num)
-            ? "${hr.toInt()} bpm"
+            ? hr.toInt()
             : currentMetrics.heartRate,
         bloodGlucose: currentMetrics.bloodGlucose,
         spo2: (spo2 != null && spo2 is num)
-            ? "${spo2.toStringAsFixed(0)} %"
+            ? spo2.toInt()
             : currentMetrics.spo2,
       );
     });
+
     print("✅ UI updated with latest health metrics");
 
     // Show success snackbar
@@ -164,9 +165,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
             setState(() {
               currentMetrics = HealthMetrics(
                 bloodPressure: "${data['systolic']}/${data['diastolic']}",
-                heartRate: "${data['heartRate']} bpm",
+                heartRate: data['heartRate'],
                 bloodGlucose: "${data['glucose']} mmol",
-                spo2: "${data['spo2']} %",
+                spo2: data['spo2'],
               );
               systolicReadings[HealthUtils.getCurrentDay()] = data['systolic']
                   .toDouble();
@@ -242,9 +243,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
           content: FutureBuilder<String>(
             future: _geminiService.getPersonalizedAdvice(
               currentMetrics.bloodPressure,
-              currentMetrics.heartRate,
+              "${currentMetrics.heartRate} bpm",
               currentMetrics.bloodGlucose,
-              currentMetrics.spo2,
+              "${currentMetrics.spo2} %",
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -475,9 +476,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
         ),
         healthCard(
           "💓",
-          currentMetrics.heartRate,
+          "${currentMetrics.heartRate} bpm",
           "Heart Rate",
-          HealthUtils.getHeartRateColor(currentMetrics.heartRate),
+          HealthUtils.getHeartRateColor("${currentMetrics.heartRate} bpm"),
           isSmallScreen,
         ),
         healthCard(
@@ -489,9 +490,9 @@ class _HealthDashboardState extends State<HealthDashboard> {
         ),
         healthCard(
           "🫁",
-          currentMetrics.spo2,
+          "${currentMetrics.spo2} %",
           "SpO₂",
-          HealthUtils.getSpO2Color(currentMetrics.spo2),
+          HealthUtils.getSpO2Color("${currentMetrics.spo2} %"),
           isSmallScreen,
         ),
       ],
