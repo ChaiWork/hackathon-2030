@@ -24,53 +24,66 @@ class HealthService {
     }
 
     final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(hours: 24));
+    final startOfDay = DateTime(now.year, now.month, now.day);
 
     final data = await _health.getHealthDataFromTypes(
-      startTime: yesterday,
+      startTime: startOfDay,
       endTime: now,
       types: types,
     );
 
     if (data.isEmpty) {
-      print("⚠️ No data returned from Health Connect");
+      print("⚠️ No data returned");
     }
 
-    // ✅ SORT by latest time
+    // ✅ SORT BY MOST RECENT
     data.sort((a, b) => b.dateTo.compareTo(a.dateTo));
 
     double? heartRate;
     double? spo2;
-    int? steps;
+    int totalSteps = 0;
+
+    final seen = <String>{};
 
     for (var point in data) {
       if (point.value is! NumericHealthValue) continue;
 
+      final key = "${point.type}_${point.dateFrom}_${point.dateTo}";
+      if (seen.contains(key)) continue;
+      seen.add(key);
+
       final value = (point.value as NumericHealthValue).numericValue.toDouble();
 
-      // ✅ TAKE FIRST (LATEST) VALUE ONLY
+      // ❤️ TAKE LATEST ONLY
       if (point.type == HealthDataType.HEART_RATE && heartRate == null) {
         heartRate = value;
+        print("❤️ Latest HR: $heartRate at ${point.dateTo}");
       }
 
+      // 🫁 TAKE LATEST ONLY
       if (point.type == HealthDataType.BLOOD_OXYGEN && spo2 == null) {
         spo2 = value;
+        print("🫁 Latest SpO2: $spo2 at ${point.dateTo}");
       }
 
-      if (point.type == HealthDataType.STEPS && steps == null) {
-        steps = value.toInt();
+      // 👟 SUM ALL TODAY
+      if (point.type == HealthDataType.STEPS) {
+        totalSteps += value.toInt();
       }
 
-      // ✅ Stop early if all found
-      if (heartRate != null && spo2 != null && steps != null) break;
+      // ✅ BREAK EARLY when done
+      if (heartRate != null && spo2 != null) {
+        // still continue steps (optional)
+        continue;
+      }
     }
 
-    print("✅ Final Data → HR: $heartRate, SpO2: $spo2, Steps: $steps");
+    print("✅ FINAL → HR: $heartRate, SpO2: $spo2, Steps: $totalSteps");
 
     return {
-      "heartRate": heartRate,
-      "spo2": spo2,
-      "steps": steps,
+      "heartRate": heartRate?.toInt(), // ✅ convert to int
+      "spo2": spo2?.toInt(), // ✅ convert to int
+      "steps": totalSteps,
       "lastUpdated": DateTime.now().toIso8601String(),
     };
   }
