@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vitalife_asistant/logic/health_utils.dart';
+import 'package:vitalife_asistant/olddesign/service/gemini_service.dart';
+import 'package:vitalife_asistant/services/gemini_genkit.dart';
 import 'package:vitalife_asistant/services/health_service.dart';
 import 'package:vitalife_asistant/widget/add_measurement_dialog.dart';
 import 'package:vitalife_asistant/widget/ai_insight_card.dart';
@@ -11,7 +13,6 @@ import 'package:vitalife_asistant/widget/statistics_dialog.dart';
 import 'package:vitalife_asistant/widget/sync_dialog.dart';
 
 import '../models/health_models.dart';
-import '../services/gemini_service.dart';
 
 final HealthService _healthService = HealthService();
 
@@ -48,14 +49,13 @@ class _HealthDashboardState extends State<HealthDashboard> {
   int _selectedNavIndex = 0;
   String _aiInsight = "Loading AI insights...";
   bool _isLoadingInsight = false;
-  final GeminiService _geminiService = GeminiService();
 
   @override
   @override
   void initState() {
     super.initState();
     _addSampleReading();
-    _initializeGemini();
+    _initializeAi();
 
     // ✅ CALL AFTER UI LOAD
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -77,8 +77,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
     );
   }
 
-  Future<void> _initializeGemini() async {
-    await _geminiService.initialize();
+  Future<void> _initializeAi() async {
     await _refreshAIInsights();
   }
 
@@ -142,14 +141,38 @@ class _HealthDashboardState extends State<HealthDashboard> {
 
   Future<void> _refreshAIInsights() async {
     setState(() => _isLoadingInsight = true);
+
     try {
-      final insight = await _geminiService.analyzeBloodPressureTrend(
-        systolicReadings,
-        allReadings.map((r) => r.toMap()).toList(),
+      final latest = allReadings.isNotEmpty
+          ? allReadings.last
+          : HealthReading(
+              date: "",
+              day: "",
+              systolic: 120,
+              diastolic: 80,
+              heartRate: currentMetrics.heartRate,
+              glucose:
+                  double.tryParse(
+                    currentMetrics.bloodGlucose.split(" ").first,
+                  ) ??
+                  5.0,
+              spo2: currentMetrics.spo2,
+            );
+
+      final result = await GenkitService.analyzeHealth(
+        systolic: latest.systolic,
+        diastolic: latest.diastolic,
+        heartRate: latest.heartRate,
+        glucose: latest.glucose,
+        spo2: latest.spo2,
       );
-      setState(() => _aiInsight = insight);
+
+      setState(() {
+        _aiInsight =
+            "${result['summary']}\n\n${result['explanation']}\n\nAdvice: ${result['advice']}";
+      });
     } catch (e) {
-      setState(() => _aiInsight = "AI insights temporarily unavailable.");
+      setState(() => _aiInsight = "AI unavailable");
     } finally {
       setState(() => _isLoadingInsight = false);
     }
@@ -240,13 +263,20 @@ class _HealthDashboardState extends State<HealthDashboard> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("AI Health Assistant"),
-          content: FutureBuilder<String>(
-            future: _geminiService.getPersonalizedAdvice(
-              currentMetrics.bloodPressure,
-              "${currentMetrics.heartRate} bpm",
-              currentMetrics.bloodGlucose,
-              "${currentMetrics.spo2} %",
+
+          content: FutureBuilder<Map<String, dynamic>>(
+            future: GenkitService.analyzeHealth(
+              systolic: int.parse(currentMetrics.bloodPressure.split("/")[0]),
+              diastolic: int.parse(currentMetrics.bloodPressure.split("/")[1]),
+              heartRate: currentMetrics.heartRate,
+              glucose:
+                  double.tryParse(
+                    currentMetrics.bloodGlucose.split(" ").first,
+                  ) ??
+                  5.0,
+              spo2: currentMetrics.spo2,
             ),
+
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
@@ -254,23 +284,32 @@ class _HealthDashboardState extends State<HealthDashboard> {
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
+
               if (snapshot.hasError) {
                 return Text("Error: ${snapshot.error}");
               }
+
+              final data = snapshot.data ?? {};
+
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.auto_awesome, color: Colors.blue, size: 40),
                   const SizedBox(height: 16),
+
                   Text(
-                    snapshot.data ?? "Keep up with your health monitoring!",
+                    "Risk: ${data["risk"]}\n\n"
+                    "${data["summary"]}\n\n"
+                    "${data["explanation"]}\n\n"
+                    "Advice: ${data["advice"]}",
                     style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
                 ],
               );
             },
           ),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
