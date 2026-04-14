@@ -1,35 +1,48 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:cloud_functions/cloud_functions.dart';
 
 class GenkitService {
-  static const String baseUrl = "http://10.0.2.2:3000";
-
-  /// AI health analysis (REPLACES analyzeBloodPressureTrend)
   static Future<Map<String, dynamic>> analyzeHealth({
     required int systolic,
     required int diastolic,
     required int heartRate,
     required double glucose,
     required int spo2,
-    String symptoms = "",
   }) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/analyze"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
+    try {
+      final functions = FirebaseFunctions.instance;
+
+      final callable = functions.httpsCallable(
+        'healthAnalysis',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+      );
+
+      final result = await callable.call({
         "systolic": systolic,
         "diastolic": diastolic,
         "heartRate": heartRate,
         "glucose": glucose,
         "spo2": spo2,
-        "symptoms": symptoms,
-      }),
-    );
+      });
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("Genkit API failed");
+      if (result.data == null) {
+        throw Exception("Empty response from server");
+      }
+
+      return Map<String, dynamic>.from(result.data);
+    } on FirebaseFunctionsException catch (e) {
+      return {
+        "risk": "unknown",
+        "explanation": "Firebase error: ${e.code}",
+        "advice": e.message ?? "No message",
+        "summary": "Function failed",
+      };
+    } catch (e) {
+      return {
+        "risk": "unknown",
+        "explanation": "Unexpected error",
+        "advice": "Check internet or backend",
+        "summary": e.toString(),
+      };
     }
   }
 }
