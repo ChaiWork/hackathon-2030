@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1026604075454",
+    "project_id": "vitalife-4eb12",
+    "storage_bucket": "vitalife-4eb12.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1026604075454:android:c2a14915e41cdaa44c51ef",
+        "android_client_info": {
+          "package_name": "com.example.vitalife_asistant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2Ea5t9NeGi8Yx_SsSDYJca0k6eY8sQWs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
