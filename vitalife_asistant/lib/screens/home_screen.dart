@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vitalife_asistant/models/healthdata.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_aiinsight_card.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_bottomnavbar.dart';
@@ -18,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  
+
   // Health data
   int? _currentHeartRate;
   int? _averageHeartRate;
@@ -27,10 +28,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   bool _hasPermission = true;
   String? _errorMessage;
-  
+
   // For average calculation (store last 7 days heart rates)
   List<int> _heartRateHistory = [];
-  
+
   final HealthService _healthService = HealthService();
 
   @override
@@ -47,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final healthData = await _healthService.fetchData();
-      
+
       if (healthData.containsKey('error')) {
         setState(() {
           _errorMessage = healthData['error'];
@@ -57,37 +58,38 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         return;
       }
-      
-      final heartRate = healthData['heartRate'] as int?;
-      final spo2 = healthData['spo2'] as int?;
-      final steps = healthData['steps'] as int;
-      
+
+      // 🔥 convert to class
+      final data = HealthData.fromMap(healthData);
+
+      final heartRate = data.heartRate;
+      final spo2 = data.spo2;
+      final steps = data.steps;
+
       setState(() {
         _currentHeartRate = heartRate;
         _hasPermission = true;
-        
-        // Calculate risk level based on heart rate
+
         _riskLevel = _calculateRiskLevel(heartRate);
-        
-        // Generate AI insight based on real data
+
         _aiInsight = _generateAIInsight(heartRate, spo2, steps);
-        
+
         _isLoading = false;
       });
-      
+
       // Load average heart rate (you'll need to implement this in HealthService)
       await _loadAverageHeartRate();
-      
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
-        _aiInsight = 'Unable to fetch health data. Please check your connection.';
+        _aiInsight =
+            'Unable to fetch health data. Please check your connection.';
       });
       print('Error loading health data: $e');
     }
   }
-  
+
   Future<void> _loadAverageHeartRate() async {
     try {
       // Fetch last 7 days of heart rate data
@@ -102,10 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
-  
+
   String _calculateRiskLevel(int? heartRate) {
     if (heartRate == null) return '--';
-    
+
     if (heartRate < 60) {
       return 'Low (Bradycardia)';
     } else if (heartRate >= 60 && heartRate <= 100) {
@@ -117,25 +119,33 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return '--';
   }
-  
+
   String _generateAIInsight(int? heartRate, int? spo2, int steps) {
     if (heartRate == null) {
       return 'Unable to fetch health data. Please check your permissions and try again.';
     }
-    
+
     List<String> insights = [];
-    
+
     // Heart rate insight
     if (heartRate < 60) {
-      insights.add('Your heart rate is below normal range (${heartRate}bpm). Consider consulting a healthcare provider.');
+      insights.add(
+        'Your heart rate is below normal range (${heartRate}bpm). Consider consulting a healthcare provider.',
+      );
     } else if (heartRate >= 60 && heartRate <= 100) {
-      insights.add('Your heart rate is normal at ${heartRate}bpm. Keep up the good work!');
+      insights.add(
+        'Your heart rate is normal at ${heartRate}bpm. Keep up the good work!',
+      );
     } else if (heartRate > 100 && heartRate <= 120) {
-      insights.add('Your heart rate is slightly elevated (${heartRate}bpm). Try relaxation techniques.');
+      insights.add(
+        'Your heart rate is slightly elevated (${heartRate}bpm). Try relaxation techniques.',
+      );
     } else if (heartRate > 120) {
-      insights.add('Your heart rate is high (${heartRate}bpm). Please rest and consult a doctor if persistent.');
+      insights.add(
+        'Your heart rate is high (${heartRate}bpm). Please rest and consult a doctor if persistent.',
+      );
     }
-    
+
     // SpO2 insight
     if (spo2 != null) {
       if (spo2 >= 95) {
@@ -143,25 +153,33 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (spo2 >= 90 && spo2 < 95) {
         insights.add('Blood oxygen is at ${spo2}%. Monitor your breathing.');
       } else if (spo2 < 90) {
-        insights.add('Low blood oxygen (${spo2}%). Please seek medical attention.');
+        insights.add(
+          'Low blood oxygen (${spo2}%). Please seek medical attention.',
+        );
       }
     }
-    
+
     // Steps insight
     if (steps > 0) {
       if (steps >= 10000) {
-        insights.add('Great job reaching ${steps} steps today! You\'re very active.');
+        insights.add(
+          'Great job reaching ${steps} steps today! You\'re very active.',
+        );
       } else if (steps >= 5000) {
-        insights.add('You\'ve taken ${steps} steps today. Aim for 10,000 steps!');
+        insights.add(
+          'You\'ve taken ${steps} steps today. Aim for 10,000 steps!',
+        );
       } else if (steps > 0) {
-        insights.add('You\'ve taken ${steps} steps today. Try to increase your daily activity.');
+        insights.add(
+          'You\'ve taken ${steps} steps today. Try to increase your daily activity.',
+        );
       }
     }
-    
+
     if (insights.isEmpty) {
       return 'Your health data is being analyzed. Check back soon for personalized insights.';
     }
-    
+
     return insights.join(' ');
   }
 
@@ -261,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-              
+
               if (_errorMessage != null && !_hasPermission)
                 const SizedBox(height: 20),
 
@@ -306,11 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Icon(
-                      Icons.timer,
-                      size: 12,
-                      color: Colors.grey[500],
-                    ),
+                    Icon(Icons.timer, size: 12, color: Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
                       'Updated just now',
@@ -401,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   Color _getRiskColor(String riskLevel) {
     if (riskLevel.contains('Normal')) return AppColors.success;
     if (riskLevel.contains('Low')) return Colors.orange;

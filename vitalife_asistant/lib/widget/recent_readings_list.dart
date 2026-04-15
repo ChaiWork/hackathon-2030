@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/health_models.dart';
+import 'package:vitalife_asistant/models/health_models_old.dart'
+    show HealthReading;
 
 class RecentReadingsList extends StatelessWidget {
   final List<HealthReading> readings;

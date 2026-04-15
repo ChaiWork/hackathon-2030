@@ -12,7 +12,7 @@ import 'package:vitalife_asistant/widget/recent_readings_list.dart';
 import 'package:vitalife_asistant/widget/statistics_dialog.dart';
 import 'package:vitalife_asistant/widget/sync_dialog.dart';
 
-import '../models/health_models.dart';
+import 'models/health_models_old.dart';
 
 final HealthService _healthService = HealthService();
 
