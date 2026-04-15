@@ -22,23 +22,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadStats();
+    _init(); // ✅ CALL HERE
+  }
+
+  Future<void> _init() async {
+    await _healthService.initPermissionOnce(); // 🔥 ONLY ONCE
+    await _loadStats();
   }
 
   Future<void> _loadStats() async {
-    try {
-      final avg = await _healthService.fetchAverageHeartRate(days: 7);
-      final max = await _healthService.fetchPeakHeartRate(days: 7);
-      final min = await _healthService.fetchMinHeartRate(days: 7);
+    final avg = await _healthService.fetchAverageHeartRate(days: 7);
+    final max = await _healthService.fetchPeakHeartRate(days: 7);
+    final min = await _healthService.fetchMinHeartRate(days: 7);
 
-      setState(() {
-        _averageHeartRate = avg;
-        _peakHeartRate = max;
-        _minHeartRate = min;
-      });
-    } catch (e) {
-      print("❌ Error loading stats: $e");
-    }
+    setState(() {
+      _averageHeartRate = avg;
+      _peakHeartRate = max;
+      _minHeartRate = min;
+    });
   }
 
   @override
