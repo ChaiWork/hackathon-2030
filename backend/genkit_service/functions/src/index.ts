@@ -1,6 +1,9 @@
 import { genkit, z } from "genkit";
 import { googleAI } from "@genkit-ai/google-genai";
+
+
 import { onCallGenkit } from "firebase-functions/https";
+
 import { defineSecret } from "firebase-functions/params";
 
 const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");

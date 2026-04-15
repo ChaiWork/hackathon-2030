@@ -38,8 +38,8 @@ class AppColors {
   }
 }
 
-// Alternative: If you prefer individual constants
-const Color colorPrimaryLight = Color(0xFFE7ECFF);
-const Color colorPrimaryMedium = Color(0xFFD8E1FF);
-const Color colorPrimaryDark = Color(0xFFA8BCFB);
-const Color colorPrimaryDeep = Color(0xFF7EA0EA);
+// // Alternative: If you prefer individual constants
+// const Color colorPrimaryLight = Color(0xFFE7ECFF);
+// const Color colorPrimaryMedium = Color(0xFFD8E1FF);
+// const Color colorPrimaryDark = Color(0xFFA8BCFB);
+// const Color colorPrimaryDeep = Color(0xFF7EA0EA);
