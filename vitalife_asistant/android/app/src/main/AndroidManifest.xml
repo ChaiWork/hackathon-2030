@@ -59,6 +59,7 @@
     
     <!-- Historical Data Access (for reading more than 30 days) -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY"/>
+    <uses-permission android:name="android.permission.health.WRITE_HEALTH_DATA" />
     
     <!-- Activity Intensity (if using) -->
     <uses-permission android:name="android.permission.health.READ_ACTIVITY_INTENSITY"/>

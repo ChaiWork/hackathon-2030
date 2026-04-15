@@ -15,6 +15,7 @@ class HealthService {
       HealthDataType.HEART_RATE,
       HealthDataType.BLOOD_OXYGEN,
       HealthDataType.STEPS,
+      
     ];
 
     bool permission = await _health.requestAuthorization(types);

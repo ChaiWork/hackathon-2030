@@ -30,11 +30,15 @@ class GenkitService {
 
       return Map<String, dynamic>.from(result.data);
     } on FirebaseFunctionsException catch (e) {
+      print("FUNCTION CODE: ${e.code}");
+      print("FUNCTION MESSAGE: ${e.message}");
+      print("FUNCTION DETAILS: ${e.details}");
+
       return {
         "risk": "unknown",
         "explanation": "Firebase error: ${e.code}",
         "advice": e.message ?? "No message",
-        "summary": "Function failed",
+        "summary": e.details?.toString() ?? "No details",
       };
     } catch (e) {
       return {

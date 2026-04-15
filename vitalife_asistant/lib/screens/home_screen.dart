@@ -6,7 +6,10 @@ import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_ai
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_bottomnavbar.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_buildHealthCard.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_emergencydialog.dart';
+import 'package:vitalife_asistant/services/gemini_genkit.dart';
+
 import 'package:vitalife_asistant/services/health_service.dart';
+
 import 'analytics_screen.dart';
 import 'profile_screen.dart';
 
@@ -24,13 +27,13 @@ class _HomeScreenState extends State<HomeScreen> {
   int? _currentHeartRate;
   int? _averageHeartRate;
   String _riskLevel = '--';
+
+  // AI
   String _aiInsight = 'Loading health data...';
+
   bool _isLoading = true;
   bool _hasPermission = true;
   String? _errorMessage;
-
-  // For average calculation (store last 7 days heart rates)
-  List<int> _heartRateHistory = [];
 
   final HealthService _healthService = HealthService();
 
@@ -40,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadHealthData();
   }
 
+  // =========================
+  // LOAD HEALTH DATA
+  // =========================
   Future<void> _loadHealthData() async {
     setState(() {
       _isLoading = true;
@@ -54,135 +60,91 @@ class _HomeScreenState extends State<HomeScreen> {
           _errorMessage = healthData['error'];
           _isLoading = false;
           _hasPermission = false;
-          _aiInsight = 'Please grant health permissions to see your data.';
+          _aiInsight = 'Permission required.';
         });
         return;
       }
 
-      // 🔥 convert to class
+      // Convert to model
       final data = HealthData.fromMap(healthData);
 
-      final heartRate = data.heartRate;
-      final spo2 = data.spo2;
-      final steps = data.steps;
-
       setState(() {
-        _currentHeartRate = heartRate;
-        _hasPermission = true;
-
-        _riskLevel = _calculateRiskLevel(heartRate);
-
-        _aiInsight = _generateAIInsight(heartRate, spo2, steps);
-
+        _currentHeartRate = data.heartRate;
+        // _callGenkitAI(data);
         _isLoading = false;
+        _hasPermission = true;
       });
 
-      // Load average heart rate (you'll need to implement this in HealthService)
       await _loadAverageHeartRate();
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
-        _aiInsight =
-            'Unable to fetch health data. Please check your connection.';
+        _aiInsight = 'Failed to load data.';
       });
-      print('Error loading health data: $e');
     }
   }
 
-  Future<void> _loadAverageHeartRate() async {
+  // =========================
+  // GENKIT AI CALL
+  // =========================
+  Future<void> _callGenkitAI(HealthData latest) async {
+    setState(() {
+      _aiInsight = "Analyzing your health with AI...";
+    });
+
     try {
-      // Fetch last 7 days of heart rate data
-      final avgHeartRate = await _healthService.fetchAverageHeartRate(days: 7);
+      final result = await GenkitService.analyzeHealth(
+        systolic: latest.systolic ?? 120,
+        diastolic: latest.diastolic ?? 80,
+        heartRate: latest.heartRate ?? 0,
+        glucose: latest.glucose ?? 5.5,
+        spo2: latest.spo2 ?? 95,
+      );
+
       setState(() {
-        _averageHeartRate = avgHeartRate;
+        final risk = result['risk'] ?? 'unknown';
+
+        _riskLevel = risk;
+
+        _aiInsight =
+            "🧠 AI Risk: $risk\n\n"
+            "${result['summary'] ?? ''}\n\n"
+            "💡 Advice:\n${result['advice'] ?? ''}";
       });
     } catch (e) {
-      print('Error loading average heart rate: $e');
       setState(() {
-        _averageHeartRate = _currentHeartRate; // Fallback to current
+        _aiInsight = _generateFallbackInsight(latest);
       });
     }
   }
 
-  String _calculateRiskLevel(int? heartRate) {
-    if (heartRate == null) return '--';
-
-    if (heartRate < 60) {
-      return 'Low (Bradycardia)';
-    } else if (heartRate >= 60 && heartRate <= 100) {
-      return 'Normal';
-    } else if (heartRate > 100 && heartRate <= 120) {
-      return 'Elevated';
-    } else if (heartRate > 120) {
-      return 'High (Tachycardia)';
+  // =========================
+  // AVERAGE HR
+  // =========================
+  Future<void> _loadAverageHeartRate() async {
+    try {
+      final avg = await _healthService.fetchAverageHeartRate(days: 7);
+      setState(() {
+        _averageHeartRate = avg;
+      });
+    } catch (_) {
+      _averageHeartRate = _currentHeartRate;
     }
-    return '--';
   }
 
-  String _generateAIInsight(int? heartRate, int? spo2, int steps) {
-    if (heartRate == null) {
-      return 'Unable to fetch health data. Please check your permissions and try again.';
-    }
-
-    List<String> insights = [];
-
-    // Heart rate insight
-    if (heartRate < 60) {
-      insights.add(
-        'Your heart rate is below normal range (${heartRate}bpm). Consider consulting a healthcare provider.',
-      );
-    } else if (heartRate >= 60 && heartRate <= 100) {
-      insights.add(
-        'Your heart rate is normal at ${heartRate}bpm. Keep up the good work!',
-      );
-    } else if (heartRate > 100 && heartRate <= 120) {
-      insights.add(
-        'Your heart rate is slightly elevated (${heartRate}bpm). Try relaxation techniques.',
-      );
-    } else if (heartRate > 120) {
-      insights.add(
-        'Your heart rate is high (${heartRate}bpm). Please rest and consult a doctor if persistent.',
-      );
-    }
-
-    // SpO2 insight
-    if (spo2 != null) {
-      if (spo2 >= 95) {
-        insights.add('Blood oxygen levels are excellent at ${spo2}%.');
-      } else if (spo2 >= 90 && spo2 < 95) {
-        insights.add('Blood oxygen is at ${spo2}%. Monitor your breathing.');
-      } else if (spo2 < 90) {
-        insights.add(
-          'Low blood oxygen (${spo2}%). Please seek medical attention.',
-        );
-      }
-    }
-
-    // Steps insight
-    if (steps > 0) {
-      if (steps >= 10000) {
-        insights.add(
-          'Great job reaching ${steps} steps today! You\'re very active.',
-        );
-      } else if (steps >= 5000) {
-        insights.add(
-          'You\'ve taken ${steps} steps today. Aim for 10,000 steps!',
-        );
-      } else if (steps > 0) {
-        insights.add(
-          'You\'ve taken ${steps} steps today. Try to increase your daily activity.',
-        );
-      }
-    }
-
-    if (insights.isEmpty) {
-      return 'Your health data is being analyzed. Check back soon for personalized insights.';
-    }
-
-    return insights.join(' ');
+  // =========================
+  // FALLBACK AI
+  // =========================
+  String _generateFallbackInsight(HealthData data) {
+    return "HR: ${data.heartRate ?? '--'} bpm\n"
+        "Steps: ${data.steps}\n"
+        "AI temporarily unavailable.";
   }
 
+  // =========================
+  // UI
+  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -190,21 +152,14 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          // Home Tab
           _buildHomeTab(),
-          // Analytics Tab
           const AnalyticsScreen(),
-          // Profile Tab
           const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: (i) => setState(() => _selectedIndex = i),
       ),
     );
   }
@@ -214,213 +169,90 @@ class _HomeScreenState extends State<HomeScreen> {
       onRefresh: _loadHealthData,
       child: SafeArea(
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome Back',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Today\'s Status',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDeep,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Image.asset(
-                    'assets/images/vitalife_logo.png',
-                    height: 50,
-                    width: 50,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Error Message if any
-              if (_errorMessage != null && !_hasPermission)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.red),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            color: Colors.red[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+              Text(
+                "Today's Status",
+                style: GoogleFonts.montserrat(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-              if (_errorMessage != null && !_hasPermission)
-                const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // Three Health Cards
               Row(
                 children: [
                   Expanded(
                     child: HealthCard(
                       title: 'Current HR',
-                      value: _isLoading ? '--' : '${_currentHeartRate ?? "--"}',
+                      value: '${_currentHeartRate ?? "--"}',
                       unit: 'bpm',
                       icon: Icons.favorite,
-                      color: AppColors.primaryDeep,
+                      color: Colors.red,
                     ),
                   ),
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: HealthCard(
                       title: 'Average HR',
-                      value: _isLoading ? '--' : '${_averageHeartRate ?? "--"}',
+                      value: '${_averageHeartRate ?? "--"}',
                       unit: 'bpm',
                       icon: Icons.trending_up,
-                      color: AppColors.primaryDark,
+                      color: Colors.blue,
                     ),
                   ),
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: HealthCard(
                       title: 'Risk Level',
                       value: _riskLevel,
                       unit: '',
                       icon: Icons.shield,
-                      color: _getRiskColor(_riskLevel),
+                      color: Colors.orange,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
 
-              // Last Updated Time
-              if (!_isLoading && _currentHeartRate != null)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Icon(Icons.timer, size: 12, color: Colors.grey[500]),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Updated just now',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 10,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 25),
 
-              const SizedBox(height: 16),
-
-              // AI Insight Section
               AIInsightCard(
                 insight: _aiInsight,
                 isLoading: _isLoading,
                 onRefresh: _loadHealthData,
               ),
-              const SizedBox(height: 32),
 
-              // Emergency Button
-              SizedBox(
-                width: double.infinity,
-                height: 72,
-                child: GestureDetector(
-                  onTap: () {
-                    EmergencyDialog.show(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: AppColors.emergencyGradient,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.getErrorWithOpacity(0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        // Animated pulse effect background
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.red[300]!.withOpacity(0.5),
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Button Content
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.emergency,
-                                color: Colors.white,
-                                size: 32,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'EMERGENCY',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.white,
-                                  letterSpacing: 2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+              const SizedBox(height: 25),
+
+              GestureDetector(
+                onTap: () => EmergencyDialog.show(context),
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.emergencyGradient,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "EMERGENCY",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Color _getRiskColor(String riskLevel) {
-    if (riskLevel.contains('Normal')) return AppColors.success;
-    if (riskLevel.contains('Low')) return Colors.orange;
-    if (riskLevel.contains('Elevated')) return Colors.orange;
-    if (riskLevel.contains('High')) return AppColors.error;
-    return AppColors.success;
   }
 }
