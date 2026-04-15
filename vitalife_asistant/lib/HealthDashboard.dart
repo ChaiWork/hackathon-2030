@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vitalife_asistant/logic/health_utils.dart';
-import 'package:vitalife_asistant/olddesign/service/gemini_service.dart';
+// import 'package:vitalife_asistant/olddesign/service/gemini_service.dart';
 import 'package:vitalife_asistant/services/gemini_genkit.dart';
 import 'package:vitalife_asistant/services/health_service.dart';
 import 'package:vitalife_asistant/widget/add_measurement_dialog.dart';
@@ -356,7 +356,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
                       _buildHeader(isSmallScreen),
                       const SizedBox(height: 25),
 
-                      AIInsightCard(
+                      AIInsightCard1(
                         insight: _aiInsight,
                         isLoading: _isLoadingInsight,
                         onRefresh: _refreshAIInsights,

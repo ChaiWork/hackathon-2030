@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// Color Palette
-const Color _color1 = Color(0xFFE7ECFF);
-const Color _color2 = Color(0xFFD8E1FF);
-const Color _color3 = Color(0xFFBBD0FF);
-const Color _color4 = Color(0xFFA8BCFB);
-const Color _color5 = Color(0xFF7EA0EA);
+import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_action_button.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_edit_button.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_info_row.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_profile_header.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_section_card.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_toggle_setting.dart';
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/connection_status.dart'
+    show ConnectionStatus;
+import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/emergency_contact_item.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -54,16 +57,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _color1,
+      backgroundColor: AppColors.primaryLight,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         elevation: 0,
         title: Text(
           'Profile',
           style: GoogleFonts.montserrat(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: _color5,
+            color: AppColors.primaryDeep,
           ),
         ),
         centerTitle: false,
@@ -74,486 +77,166 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Header
-            _buildProfileHeader(),
+            ProfileHeader(fullName: fullName, age: age, lifestyle: lifestyle),
             const SizedBox(height: 32),
 
             // Basic Information
-            _buildSection(
+            SectionCard(
               title: 'Basic Information',
               icon: Icons.person,
               children: [
-                _buildInfoRow('Full Name', fullName),
-                _buildInfoRow('Age', age),
-                _buildInfoRow('Gender', gender),
-                _buildInfoRow('Height', height),
-                _buildInfoRow('Weight', weight),
-                _buildEditButton('Edit'),
+                InfoRow(label: 'Full Name', value: fullName),
+                InfoRow(label: 'Age', value: age),
+                InfoRow(label: 'Gender', value: gender),
+                InfoRow(label: 'Height', value: height),
+                InfoRow(label: 'Weight', value: weight),
+                EditButton(label: 'Edit'),
               ],
             ),
             const SizedBox(height: 20),
 
             // Health Profile
-            _buildSection(
+            SectionCard(
               title: 'Health Profile',
               icon: Icons.health_and_safety,
               children: [
-                _buildInfoRow('Medical Conditions', medicalConditions),
-                _buildInfoRow('Lifestyle', lifestyle),
-                _buildEditButton('Edit'),
+                InfoRow(label: 'Medical Conditions', value: medicalConditions),
+                InfoRow(label: 'Lifestyle', value: lifestyle),
+                EditButton(label: 'Edit'),
               ],
             ),
             const SizedBox(height: 20),
 
             // Emergency Contact
-            _buildSection(
+            SectionCard(
               title: 'Emergency Contacts',
               icon: Icons.emergency,
               children: [
-                _buildToggleSetting('Auto Notify', autoNotify, (value) {
-                  setState(() => autoNotify = value);
-                }),
+                ToggleSetting(
+                  label: 'Auto Notify',
+                  value: autoNotify,
+                  onChanged: (value) {
+                    setState(() => autoNotify = value);
+                  },
+                ),
                 const SizedBox(height: 12),
                 ...emergencyContacts.asMap().entries.map((entry) {
                   int index = entry.key;
                   Map<String, String> contact = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _color3.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                contact['name']!,
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              Text(
-                                contact['phone']!,
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              setState(() {
-                                emergencyContacts.removeAt(index);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                  return EmergencyContactItem(
+                    name: contact['name']!,
+                    phone: contact['phone']!,
+                    onDelete: () {
+                      setState(() {
+                        emergencyContacts.removeAt(index);
+                      });
+                    },
                   );
                 }),
-                _buildEditButton('Add Contact'),
+                EditButton(label: 'Add Contact'),
               ],
             ),
             const SizedBox(height: 20),
 
             // Device Connection
-            _buildSection(
+            SectionCard(
               title: 'Device Connection',
               icon: Icons.watch,
               children: [
-                _buildInfoRow('Connected Device', connectedDevice),
-                _buildConnectionStatus(isConnected),
-                _buildEditButton('Connect Device'),
+                InfoRow(label: 'Connected Device', value: connectedDevice),
+                ConnectionStatus(isConnected: isConnected),
+                EditButton(label: 'Connect Device'),
               ],
             ),
             const SizedBox(height: 20),
 
             // Alert Settings
-            _buildSection(
+            SectionCard(
               title: 'Alert Settings',
               icon: Icons.notifications,
               children: [
-                _buildInfoRow('HR Threshold', '$heartRateThreshold BPM'),
-                _buildToggleSetting('Notifications', notificationToggle, (value) {
-                  setState(() => notificationToggle = value);
-                }),
-                _buildEditButton('Edit Alerts'),
+                InfoRow(
+                  label: 'HR Threshold',
+                  value: '$heartRateThreshold BPM',
+                ),
+                ToggleSetting(
+                  label: 'Notifications',
+                  value: notificationToggle,
+                  onChanged: (value) {
+                    setState(() => notificationToggle = value);
+                  },
+                ),
+                EditButton(label: 'Edit Alerts'),
               ],
             ),
             const SizedBox(height: 20),
 
             // AI Settings
-            _buildSection(
+            SectionCard(
               title: 'AI Settings',
               icon: Icons.smart_toy,
               children: [
-                _buildInfoRow('AI Sensitivity', aiSensitivity),
-                _buildEditButton('Additional AI Settings'),
+                InfoRow(label: 'AI Sensitivity', value: aiSensitivity),
+                EditButton(label: 'Additional AI Settings'),
               ],
             ),
             const SizedBox(height: 20),
 
             // Health Goals
-            _buildSection(
+            SectionCard(
               title: 'Health Goals',
               icon: Icons.flag,
               children: [
-                _buildInfoRow('Target HR Range', targetHRRange),
-                _buildInfoRow('Fitness Goal', fitnessGoal),
-                _buildEditButton('Edit Goals'),
+                InfoRow(label: 'Target HR Range', value: targetHRRange),
+                InfoRow(label: 'Fitness Goal', value: fitnessGoal),
+                EditButton(label: 'Edit Goals'),
               ],
             ),
             const SizedBox(height: 20),
 
             // Data & Privacy
-            _buildSection(
+            SectionCard(
               title: 'Data & Privacy',
               icon: Icons.security,
               children: [
-                _buildToggleSetting('Data Sharing', dataSharingToggle, (value) {
-                  setState(() => dataSharingToggle = value);
-                }),
+                ToggleSetting(
+                  label: 'Data Sharing',
+                  value: dataSharingToggle,
+                  onChanged: (value) {
+                    setState(() => dataSharingToggle = value);
+                  },
+                ),
                 const SizedBox(height: 12),
-                _buildActionButton('Download Health Report', Icons.download),
+                ActionButton(
+                  label: 'Download Health Report',
+                  icon: Icons.download,
+                ),
                 const SizedBox(height: 8),
-                _buildActionButton('Upload Medical Report', Icons.upload_file),
+                ActionButton(
+                  label: 'Upload Medical Report',
+                  icon: Icons.upload_file,
+                ),
                 const SizedBox(height: 8),
-                _buildActionButton('Delete All Data', Icons.delete_forever,
-                    isDestructive: true),
+                ActionButton(
+                  label: 'Delete All Data',
+                  icon: Icons.delete_forever,
+                  isDestructive: true,
+                ),
               ],
             ),
             const SizedBox(height: 20),
 
             // Logout
-            _buildActionButton('Logout', Icons.logout,
-                isDestructive: true,
-                onTap: () {
-                  Navigator.of(context).pushReplacementNamed('/auth');
-                }),
+            ActionButton(
+              label: 'Logout',
+              icon: Icons.logout,
+              isDestructive: true,
+              onPressed: () {
+                Navigator.of(context).pushReplacementNamed('/auth');
+              },
+            ),
             const SizedBox(height: 40),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _color3.withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _color5.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_color4, _color5],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 40,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fullName,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$age years • $lifestyle',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _color5.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Member since 2024',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      color: _color5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _color3.withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _color5.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Section Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: _color3.withOpacity(0.2),
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _color5.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: _color5,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: _color5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Section Content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: children,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleSetting(String label, bool value, Function(bool) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: _color5,
-            inactiveThumbColor: Colors.grey[400],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConnectionStatus(bool isConnected) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Status',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isConnected ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.circle,
-                  size: 8,
-                  color: isConnected ? Colors.green : Colors.red,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  isConnected ? 'Connected' : 'Not Connected',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isConnected ? Colors.green : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEditButton(String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('$label clicked - Feature coming soon'),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _color5.withOpacity(0.15),
-            foregroundColor: _color5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String label, IconData icon,
-      {bool isDestructive = false, VoidCallback? onTap}) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onTap ?? () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$label - Feature coming soon'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
-        icon: Icon(icon),
-        label: Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isDestructive ? Colors.red : _color5,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
         ),
       ),
     );
