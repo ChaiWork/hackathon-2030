@@ -4,21 +4,48 @@ import 'package:health/health.dart';
 class HealthService {
   final Health _health = Health();
 
+  bool _permissionGranted = false;
+  bool _isRequestingPermission = false;
+
   Future<void> _initialize() async {
     await _health.configure();
   }
 
-  Future<Map<String, dynamic>> fetchData() async {
+  // =========================
+  // 🔥 SAFE PERMISSION HANDLER (KEY FIX)
+  // =========================
+  Future<bool> _ensurePermission(List<HealthDataType> types) async {
     await _initialize();
-    
+
+    // already granted → skip
+    if (_permissionGranted) return true;
+
+    // prevent multiple simultaneous requests
+    if (_isRequestingPermission) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      return _permissionGranted;
+    }
+
+    _isRequestingPermission = true;
+
+    _permissionGranted = await _health.requestAuthorization(types);
+
+    _isRequestingPermission = false;
+
+    return _permissionGranted;
+  }
+
+  // =========================
+  // FETCH DASHBOARD DATA
+  // =========================
+  Future<Map<String, dynamic>> fetchData() async {
     final types = [
       HealthDataType.HEART_RATE,
       HealthDataType.BLOOD_OXYGEN,
       HealthDataType.STEPS,
-      
     ];
 
-    bool permission = await _health.requestAuthorization(types);
+    bool permission = await _ensurePermission(types);
 
     if (!permission) {
       return {
@@ -38,11 +65,6 @@ class HealthService {
       types: types,
     );
 
-    if (data.isEmpty) {
-      print("⚠️ No data returned");
-    }
-
-    // SORT BY MOST RECENT
     data.sort((a, b) => b.dateTo.compareTo(a.dateTo));
 
     double? heartRate;
@@ -60,25 +82,18 @@ class HealthService {
 
       final value = (point.value as NumericHealthValue).numericValue.toDouble();
 
-      // TAKE LATEST ONLY
       if (point.type == HealthDataType.HEART_RATE && heartRate == null) {
         heartRate = value;
-        print("❤️ Latest HR: $heartRate at ${point.dateTo}");
       }
 
-      // TAKE LATEST ONLY
       if (point.type == HealthDataType.BLOOD_OXYGEN && spo2 == null) {
         spo2 = value;
-        print("🫁 Latest SpO2: $spo2 at ${point.dateTo}");
       }
 
-      // SUM ALL TODAY
       if (point.type == HealthDataType.STEPS) {
         totalSteps += value.toInt();
       }
     }
-
-    print("✅ FINAL → HR: $heartRate, SpO2: $spo2, Steps: $totalSteps");
 
     return {
       "heartRate": heartRate?.toInt(),
@@ -88,12 +103,13 @@ class HealthService {
     };
   }
 
+  // =========================
+  // AVERAGE HEART RATE
+  // =========================
   Future<int?> fetchAverageHeartRate({int days = 7}) async {
-    await _initialize();
-    
     final types = [HealthDataType.HEART_RATE];
 
-    bool permission = await _health.requestAuthorization(types);
+    bool permission = await _ensurePermission(types);
 
     if (!permission) {
       print("❌ Permission denied for average heart rate");
@@ -109,43 +125,33 @@ class HealthService {
       types: types,
     );
 
-    if (data.isEmpty) {
-      print("⚠️ No heart rate data for average calculation");
-      return null;
-    }
-
     List<double> heartRates = [];
-    
+
     for (var point in data) {
       if (point.value is NumericHealthValue) {
-        final value = (point.value as NumericHealthValue).numericValue.toDouble();
-        heartRates.add(value);
+        heartRates.add(
+          (point.value as NumericHealthValue).numericValue.toDouble(),
+        );
       }
     }
 
-    if (heartRates.isEmpty) {
-      return null;
-    }
+    if (heartRates.isEmpty) return null;
 
-    // Calculate average
     double sum = heartRates.reduce((a, b) => a + b);
-    int average = (sum / heartRates.length).round();
-    
-    print("📊 Average heart rate over $days days: $average bpm (from ${heartRates.length} readings)");
-    
-    return average;
+    return (sum / heartRates.length).round();
   }
 
-  Future<List<int>> fetchHeartRateHistory({int days = 7}) async {
-    await _initialize();
-    
+  // =========================
+  // PEAK HEART RATE (MAX)
+  // =========================
+  Future<int?> fetchPeakHeartRate({int days = 7}) async {
     final types = [HealthDataType.HEART_RATE];
 
-    bool permission = await _health.requestAuthorization(types);
+    bool permission = await _ensurePermission(types);
 
     if (!permission) {
-      print("❌ Permission denied for heart rate history");
-      return [];
+      print("❌ Permission denied for peak heart rate");
+      return null;
     }
 
     final now = DateTime.now();
@@ -157,15 +163,80 @@ class HealthService {
       types: types,
     );
 
-    List<int> heartRates = [];
-    
+    List<double> hr = [];
+
     for (var point in data) {
       if (point.value is NumericHealthValue) {
-        final value = (point.value as NumericHealthValue).numericValue.toInt();
-        heartRates.add(value);
+        hr.add((point.value as NumericHealthValue).numericValue.toDouble());
       }
     }
 
-    return heartRates;
+    if (hr.isEmpty) return null;
+
+    double peak = hr.reduce((a, b) => a > b ? a : b);
+
+    return peak.toInt();
+  }
+
+  // =========================
+  // MIN HEART RATE
+  // =========================
+  Future<int?> fetchMinHeartRate({int days = 7}) async {
+    final types = [HealthDataType.HEART_RATE];
+
+    bool permission = await _ensurePermission(types);
+
+    if (!permission) {
+      print("❌ Permission denied for min heart rate");
+      return null;
+    }
+
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day - days);
+
+    final data = await _health.getHealthDataFromTypes(
+      startTime: startDate,
+      endTime: now,
+      types: types,
+    );
+
+    List<double> hr = [];
+
+    for (var point in data) {
+      if (point.value is NumericHealthValue) {
+        hr.add((point.value as NumericHealthValue).numericValue.toDouble());
+      }
+    }
+
+    if (hr.isEmpty) return null;
+
+    double min = hr.reduce((a, b) => a < b ? a : b);
+
+    return min.toInt();
+  }
+
+  // =========================
+  // HEART RATE HISTORY
+  // =========================
+  Future<List<int>> fetchHeartRateHistory({int days = 7}) async {
+    final types = [HealthDataType.HEART_RATE];
+
+    bool permission = await _ensurePermission(types);
+
+    if (!permission) return [];
+
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day - days);
+
+    final data = await _health.getHealthDataFromTypes(
+      startTime: startDate,
+      endTime: now,
+      types: types,
+    );
+
+    return data
+        .where((p) => p.value is NumericHealthValue)
+        .map((p) => (p.value as NumericHealthValue).numericValue.toInt())
+        .toList();
   }
 }
