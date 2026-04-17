@@ -1,10 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _firestore;
+  static const String _region = 'us-central1';
+  final FirebaseFunctions _functions;
 
-  FirestoreService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirestoreService({FirebaseFunctions? functions})
+      : _functions = functions ?? FirebaseFunctions.instanceFor(region: _region);
 
   Future<void> saveHeartRate({
     required String uid,
@@ -12,15 +13,15 @@ class FirestoreService {
     int? spo2,
     int? steps,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('heart_rate_logs')
-        .add({
+    // uid is ignored server-side (request.auth.uid is used).
+    final callable = _functions.httpsCallable(
+      'saveHeartRateLog',
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 20)),
+    );
+    await callable.call(<String, dynamic>{
       'heartRate': heartRate,
-      'spo2': spo2,
-      'steps': steps,
-      'createdAt': FieldValue.serverTimestamp(),
+      if (spo2 != null) 'spo2': spo2,
+      if (steps != null) 'steps': steps,
     });
   }
 }
