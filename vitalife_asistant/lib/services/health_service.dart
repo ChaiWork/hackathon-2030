@@ -183,4 +183,104 @@ class HealthService {
         .map((p) => (p.value as NumericHealthValue).numericValue.toInt())
         .toList();
   }
+
+  // =========================
+  // WEEKLY HEART RATE TREND
+  // =========================
+  Future<List<int?>> fetchWeeklyHeartRateTrend({int days = 7}) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <int?>[];
+
+    for (var i = days - 1; i >= 0; i--) {
+      final dayStart = today.subtract(Duration(days: i));
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final data = await _health.getHealthDataFromTypes(
+        startTime: dayStart,
+        endTime: dayEnd,
+        types: [HealthDataType.HEART_RATE],
+      );
+
+      final values = data
+          .where((p) => p.value is NumericHealthValue)
+          .map((p) => (p.value as NumericHealthValue).numericValue.toDouble())
+          .toList();
+
+      if (values.isEmpty) {
+        result.add(null);
+      } else {
+        final avg = values.reduce((a, b) => a + b) / values.length;
+        result.add(avg.round());
+      }
+    }
+
+    return result;
+  }
+
+  // =========================
+  // MONTHLY HEART RATE TREND
+  // =========================
+  Future<List<int?>> fetchMonthlyHeartRateTrend({int days = 30}) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <int?>[];
+
+    for (var i = days - 1; i >= 0; i--) {
+      final dayStart = today.subtract(Duration(days: i));
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final data = await _health.getHealthDataFromTypes(
+        startTime: dayStart,
+        endTime: dayEnd,
+        types: [HealthDataType.HEART_RATE],
+      );
+
+      final values = data
+          .where((p) => p.value is NumericHealthValue)
+          .map((p) => (p.value as NumericHealthValue).numericValue.toDouble())
+          .toList();
+
+      if (values.isEmpty) {
+        result.add(null);
+      } else {
+        final avg = values.reduce((a, b) => a + b) / values.length;
+        result.add(avg.round());
+      }
+    }
+
+    return result;
+  }
+
+  // =========================
+  // DAILY HEART RATE BREAKDOWN
+  // =========================
+  Future<List<int?>> fetchDailyHeartRateBreakdown() async {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    final data = await _health.getHealthDataFromTypes(
+      startTime: startOfDay,
+      endTime: endOfDay,
+      types: [HealthDataType.HEART_RATE],
+    );
+
+    final buckets = <int, List<double>>{};
+
+    for (final point in data) {
+      if (point.value is! NumericHealthValue) continue;
+
+      final hour = point.dateFrom.hour;
+      final value = (point.value as NumericHealthValue).numericValue.toDouble();
+      buckets.putIfAbsent(hour, () => <double>[]).add(value);
+    }
+
+    return List<int?>.generate(24, (hour) {
+      final values = buckets[hour];
+      if (values == null || values.isEmpty) return null;
+      final avg = values.reduce((a, b) => a + b) / values.length;
+      return avg.round();
+    });
+  }
 }

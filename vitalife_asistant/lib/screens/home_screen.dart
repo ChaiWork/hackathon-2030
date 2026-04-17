@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         _currentHeartRate = data.heartRate;
-        // _callGenkitAI(data);
+        _callGenkitAI(data);
         _isLoading = false;
         _hasPermission = true;
       });
@@ -103,17 +103,24 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       setState(() {
-        final risk = result['risk'] ?? 'unknown';
+        final risk = (result['risk'] ?? 'unknown').toString();
+        final summary = (result['summary'] ?? '').toString();
+        final advice = (result['advice'] ?? '').toString();
+        final errorCode = result['errorCode']?.toString();
+        final details = result['details']?.toString();
 
-        _riskLevel = risk;
+        _riskLevel = risk.toUpperCase();
 
         _aiInsight =
             "🧠 AI Risk: $risk\n\n"
-            "${result['summary'] ?? ''}\n\n"
-            "💡 Advice:\n${result['advice'] ?? ''}";
+            "$summary\n\n"
+            "💡 Advice:\n$advice"
+            "${errorCode != null ? "\n\n⚠️ Error Code: $errorCode" : ""}"
+            "${details != null && details.isNotEmpty ? "\nDetails: $details" : ""}";
       });
     } catch (e) {
       setState(() {
+        _riskLevel = 'UNKNOWN';
         _aiInsight = _generateFallbackInsight(latest);
       });
     }
