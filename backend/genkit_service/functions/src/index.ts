@@ -17,11 +17,7 @@ const ai = genkit({
 /* ---------------- SCHEMAS ---------------- */
 
 const inputSchema = z.object({
-  systolic: z.number(),
-  diastolic: z.number(),
   heartRate: z.number(),
-  glucose: z.number(),
-  spo2: z.number(),
 });
 
 const outputSchema = z.object({
@@ -45,12 +41,9 @@ const healthAnalysisFlow = ai.defineFlow(
     try {
       const response = await ai.generate({
         prompt: `
-Analyze the following health metrics:
+Analyze this heart rate reading:
 
-Blood Pressure: ${input.systolic}/${input.diastolic} mmHg  
-Heart Rate: ${input.heartRate} bpm  
-Glucose: ${input.glucose} mg/dL  
-SpO2: ${input.spo2}%  
+Heart Rate: ${input.heartRate} bpm
 
 Rules:
 - risk must be exactly one of: low, moderate, high

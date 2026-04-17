@@ -5,11 +5,7 @@ class GenkitService {
   static const String _region = 'us-central1';
 
   static Future<Map<String, dynamic>> analyzeHealth({
-    required int systolic,
-    required int diastolic,
     required int heartRate,
-    required double glucose,
-    required int spo2,
   }) async {
     try {
       final functions = FirebaseFunctions.instanceFor(region: _region);
@@ -20,11 +16,7 @@ class GenkitService {
       );
 
       final result = await callable.call({
-        "systolic": systolic,
-        "diastolic": diastolic,
         "heartRate": heartRate,
-        "glucose": glucose,
-        "spo2": spo2,
       });
 
       final normalized = _normalizeResponse(result.data);

@@ -95,11 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final result = await GenkitService.analyzeHealth(
-        systolic: latest.systolic ?? 120,
-        diastolic: latest.diastolic ?? 80,
         heartRate: latest.heartRate ?? 0,
-        glucose: latest.glucose ?? 5.5,
-        spo2: latest.spo2 ?? 95,
       );
 
       setState(() {
