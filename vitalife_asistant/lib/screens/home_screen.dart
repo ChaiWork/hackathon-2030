@@ -58,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final healthData = await _healthService.fetchData();
+      
 
       if (healthData.containsKey('error')) {
         setState(() {
@@ -90,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _callGenkitAI(data);
         _isLoading = false;
         _hasPermission = true;
+        
       });
 
       await _loadAverageHeartRate();
@@ -100,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _aiInsight = 'Failed to load data.';
       });
     }
+    
   }
 
   // =========================

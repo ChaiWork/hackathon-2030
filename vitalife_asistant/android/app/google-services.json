@@ -12,7 +12,20 @@
           "package_name": "com.example.vitalife_asistant"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1026604075454-4375s9695r8vl4im6hhkuptn6tiba3g3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vitalife_asistant",
+            "certificate_hash": "d66e84e6ef7bf4c88ffe33e40dd461ef86488505"
+          }
+        },
+        {
+          "client_id": "1026604075454-e2jhevhh8vp10ecrcqfb2lsqbim9vpb4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC2Ea5t9NeGi8Yx_SsSDYJca0k6eY8sQWs"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1026604075454-e2jhevhh8vp10ecrcqfb2lsqbim9vpb4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1026604075454-eig7d51o41b3isod0g810klmorb72vus.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vitalifeAsistant"
+              }
+            }
+          ]
         }
       }
     }
