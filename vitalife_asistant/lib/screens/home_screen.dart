@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/models/healthdata.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
@@ -6,6 +7,7 @@ import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_ai
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_bottomnavbar.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_buildHealthCard.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_emergencydialog.dart';
+import 'package:vitalife_asistant/services/firestore_service.dart';
 import 'package:vitalife_asistant/services/gemini_genkit.dart';
 
 import 'package:vitalife_asistant/services/health_service.dart';
@@ -36,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _errorMessage;
 
   final HealthService _healthService = HealthService();
+  final FirestoreService _firestoreService = FirestoreService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -67,6 +71,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Convert to model
       final data = HealthData.fromMap(healthData);
+      final user = _auth.currentUser;
+      if (user != null && data.heartRate != null) {
+        try {
+          await _firestoreService.saveHeartRate(
+            uid: user.uid,
+            heartRate: data.heartRate!,
+            spo2: data.spo2,
+            steps: data.steps,
+          );
+        } catch (_) {
+          // Keep UI responsive even when Firestore write fails.
+        }
+      }
 
       setState(() {
         _currentHeartRate = data.heartRate;

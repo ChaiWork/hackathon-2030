@@ -89,7 +89,7 @@
     <!-- APPLICATION                                 -->
     <!-- ============================================ -->
     <application
-        android:label="vitalife_asistant"
+        android:label="VitaLife Assistant"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
