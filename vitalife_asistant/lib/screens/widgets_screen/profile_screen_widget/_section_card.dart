@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
 
-
 class SectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final List<Widget> children;
+
+  final VoidCallback? onEdit;
+  final bool showEditButton;
 
   const SectionCard({
     super.key,
     required this.title,
     required this.icon,
     required this.children,
+    this.onEdit,
+    this.showEditButton = false,
   });
 
   @override
@@ -35,7 +39,7 @@ class SectionCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Section Header
+          // HEADER
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -53,30 +57,52 @@ class SectionCard extends StatelessWidget {
                     color: AppColors.getPrimaryWithOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    icon,
-                    color: AppColors.primaryDeep,
-                    size: 20,
-                  ),
+                  child: Icon(icon, color: AppColors.primaryDeep, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDeep,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryDeep,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          // Section Content
+
+          // CONTENT
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: children,
+              children: [
+                ...children,
+
+                const SizedBox(height: 16),
+
+                // EDIT BUTTON BELOW WEIGHT
+                if (showEditButton)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit),
+                      label: const Text("Edit"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryDeep,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
