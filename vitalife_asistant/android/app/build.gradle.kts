@@ -1,13 +1,8 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-
-     // Add the Google services Gradle plugin
-  id("com.google.gms.google-services")
-
-    
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -18,15 +13,18 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+
+        // ✅ REQUIRED for flutter_local_notifications
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
-      defaultConfig {
+    defaultConfig {
         applicationId = "com.example.vitalife_asistant"
-        minSdk = 26   // ✅ REQUIRED
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -34,8 +32,6 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -45,17 +41,13 @@ flutter {
     source = "../.."
 }
 
-
 dependencies {
-  // Import the Firebase BoM
-  implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+    // Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
 
+    // Firebase Analytics
+    implementation("com.google.firebase:firebase-analytics")
 
-  // TODO: Add the dependencies for Firebase products you want to use
-  // When using the BoM, don't specify versions in Firebase dependencies
-  implementation("com.google.firebase:firebase-analytics")
-
-
-  // Add the dependencies for any other desired Firebase products
-  // https://firebase.google.com/docs/android/setup#available-libraries
+    // ✅ REQUIRED: updated desugaring (fixes your error)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

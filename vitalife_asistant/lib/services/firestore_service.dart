@@ -186,4 +186,20 @@ class FirestoreService {
       print("❌ Error saving AI insight: $e");
     }
   }
+
+  // Location: lib/services/firestore_service.dart
+
+  Future<void> updateUserFcmToken(String uid, String token) async {
+    try {
+      // Sets the token in the user's primary document so the Cloud Function can find it
+      await _firestore.collection('users').doc(uid).set({
+        'fcmToken': token,
+        'lastLogin': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      print("FCM Token successfully synced for Push Notifications");
+    } catch (e) {
+      print("Error syncing FCM Token: $e");
+    }
+  }
 }
