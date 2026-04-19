@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +16,8 @@ import 'package:vitalife_asistant/services/health_service.dart';
 
 import 'analytics_screen.dart';
 import 'profile_screen.dart';
+
+final user = FirebaseAuth.instance.currentUser;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final healthData = await _healthService.fetchData();
-      
 
       if (healthData.containsKey('error')) {
         setState(() {
@@ -91,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _callGenkitAI(data);
         _isLoading = false;
         _hasPermission = true;
-        
       });
 
       await _loadAverageHeartRate();
@@ -102,7 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _aiInsight = 'Failed to load data.';
       });
     }
-    
   }
 
   // =========================
@@ -118,17 +119,36 @@ class _HomeScreenState extends State<HomeScreen> {
         heartRate: latest.heartRate ?? 0,
       );
 
-      setState(() {
-        final risk = (result['risk'] ?? 'unknown').toString();
-        final summary = (result['summary'] ?? '').toString();
-        final advice = (result['advice'] ?? '').toString();
-        final errorCode = result['errorCode']?.toString();
-        final details = result['details']?.toString();
+      final risk = (result['risk'] ?? '').toString().toLowerCase();
+      final summary = (result['summary'] ?? '').toString();
+      final advice = (result['advice'] ?? '').toString();
+      final errorCode = result['errorCode']?.toString();
+      final details = result['details']?.toString();
 
-        _riskLevel = risk.toUpperCase();
+      final isSuccess =
+          errorCode == null &&
+          risk.isNotEmpty &&
+          summary.isNotEmpty &&
+          advice.isNotEmpty;
+
+      // =========================
+      // 💾 SAVE ALL RISKS (LOW / MEDIUM / HIGH)
+      // =========================
+      if (isSuccess && user != null) {
+        await FirestoreService().saveAIInsight(
+          uid: user!.uid,
+          heartRate: latest.heartRate ?? 0,
+          risk: risk,
+          summary: summary,
+          advice: advice,
+        );
+      }
+
+      setState(() {
+        _riskLevel = risk.isNotEmpty ? risk.toUpperCase() : 'UNKNOWN';
 
         _aiInsight =
-            "🧠 AI Risk: $risk\n\n"
+            "🧠 AI Risk: ${risk.isNotEmpty ? risk : 'unknown'}\n\n"
             "$summary\n\n"
             "💡 Advice:\n$advice"
             "${errorCode != null ? "\n\n⚠️ Error Code: $errorCode" : ""}"

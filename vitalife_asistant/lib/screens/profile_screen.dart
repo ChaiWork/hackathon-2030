@@ -5,7 +5,6 @@ import 'package:vitalife_asistant/screens/constant/Color.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_action_button.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_info_row.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_section_card.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vitalife_asistant/services/firestore_service.dart';
 // IMPORT SERVICE
 

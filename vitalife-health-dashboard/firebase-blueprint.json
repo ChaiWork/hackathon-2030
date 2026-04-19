@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Comprehensive user profile including physical metrics.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "fullName": { "type": "string" },
+        "age": { "type": "string" },
+        "gender": { "type": "string" },
+        "height": { "type": "string" },
+        "weight": { "type": "string" },
+        "role": { "type": "string" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "HeartRateLog": {
+      "title": "Heart Rate Log",
+      "description": "Point-in-time health metrics including heart rate, steps, and SpO2.",
+      "type": "object",
+      "properties": {
+        "heartRate": { "type": "number" },
+        "steps": { "type": "number" },
+        "spo2": { "type": ["number", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["heartRate", "createdAt"]
+    },
+    "HeartRateBreakdown": {
+      "title": "Heart Rate Breakdown",
+      "description": "Hourly heart rate aggregation data.",
+      "type": "object",
+      "properties": {
+        "heartRate": { "type": "number" },
+        "hour": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["heartRate", "hour", "date"]
+    },
+    "AIInsight": {
+      "title": "AI Insight",
+      "description": "High-risk AI generated health insights and advice.",
+      "type": "object",
+      "properties": {
+        "heartRate": { "type": "number" },
+        "risk": { "type": "string" },
+        "summary": { "type": "string" },
+        "advice": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["heartRate", "risk", "summary", "advice", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with biometric data."
+    },
+    "/users/{userId}/heart_rate_logs/{logId}": {
+      "schema": "HeartRateLog",
+      "description": "Historical heart rate data points for granular tracking."
+    },
+    "/users/{userId}/heart_rate_breakdown/{breakdownId}": {
+      "schema": "HeartRateBreakdown",
+      "description": "Aggregated hourly heart rate data for dashboard analysis."
+    },
+    "/users/{userId}/ai_insights/{insightId}": {
+      "schema": "AIInsight",
+      "description": "Critical AI-generated health warnings and tailored advice."
+    }
+  }
+}

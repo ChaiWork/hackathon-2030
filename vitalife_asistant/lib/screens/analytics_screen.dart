@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:vitalife_asistant/screens/constant/Color.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/analytics_screen_widgets/_chart_card.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/analytics_screen_widgets/_stats_row.dart';
+
 import 'package:vitalife_asistant/services/health_service.dart';
+import 'package:vitalife_asistant/services/firestore_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -15,10 +19,14 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final HealthService _healthService = HealthService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  final user = FirebaseAuth.instance.currentUser;
 
   int? _averageHeartRate;
   int? _peakHeartRate;
   int? _minHeartRate;
+
   List<int?> _weeklyHeartRate = [];
   List<int?> _monthlyHeartRate = [];
   List<int?> _dailyHeartRate = [];
@@ -26,21 +34,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   void initState() {
     super.initState();
-    _init(); // ✅ CALL HERE
+    _init();
   }
 
   Future<void> _init() async {
-    await _healthService.initPermissionOnce(); // 🔥 ONLY ONCE
+    await _healthService.initPermissionOnce();
     await _loadStats();
+    await _saveBreakdownToFirebase(); // 🔥 NEW
   }
 
+  // =========================
+  // LOAD DATA FROM DEVICE
+  // =========================
   Future<void> _loadStats() async {
     final avg = await _healthService.fetchAverageHeartRate(days: 7);
     final max = await _healthService.fetchPeakHeartRate(days: 7);
     final min = await _healthService.fetchMinHeartRate(days: 7);
-    final weeklyTrend = await _healthService.fetchWeeklyHeartRateTrend(days: 7);
-    final monthlyTrend = await _healthService.fetchMonthlyHeartRateTrend(days: 30);
-    final dailyBreakdown = await _healthService.fetchDailyHeartRateBreakdown();
+    final weeklyTrend =
+        await _healthService.fetchWeeklyHeartRateTrend(days: 7);
+    final monthlyTrend =
+        await _healthService.fetchMonthlyHeartRateTrend(days: 30);
+    final dailyBreakdown =
+        await _healthService.fetchDailyHeartRateBreakdown();
 
     setState(() {
       _averageHeartRate = avg;
@@ -50,6 +65,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       _monthlyHeartRate = monthlyTrend;
       _dailyHeartRate = dailyBreakdown;
     });
+  }
+
+  // =========================
+  // SAVE TO FIREBASE (OPTION 1)
+  // =========================
+  Future<void> _saveBreakdownToFirebase() async {
+    if (user == null) return;
+
+    final breakdown =
+        await _healthService.fetchDailyHeartRateBreakdown();
+
+    await _firestoreService.saveDailyBreakdown(
+      uid: user!.uid,
+      hourlyData: breakdown,
+    );
   }
 
   @override
@@ -67,7 +97,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             color: AppColors.primaryDeep,
           ),
         ),
-        centerTitle: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -81,7 +110,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 🔥 REAL DATA HERE
             StatsRow(
               avgHr: _averageHeartRate?.toString() ?? '--',
               peakHr: _peakHeartRate?.toString() ?? '--',
@@ -112,13 +140,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
+  // =========================
+  // DAILY CHART
+  // =========================
   Widget _buildDailyBreakdown() {
     return _buildLineChart(
       data: _dailyHeartRate,
       maxX: 23,
       emptyText: 'No heart rate data for today',
       bottomLabelBuilder: (index) {
-        if (index != 0 && index != 6 && index != 12 && index != 18 && index != 23) {
+        if (index != 0 &&
+            index != 6 &&
+            index != 12 &&
+            index != 18 &&
+            index != 23) {
           return '';
         }
         return _formatHourLabel(index);
@@ -137,6 +172,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     const weekDayShort = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
     final dayLabels = List<String>.generate(7, (index) {
       final day = today.subtract(Duration(days: 6 - index));
       return weekDayShort[day.weekday - 1];
@@ -164,6 +200,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
+  // =========================
+  // COMMON CHART BUILDER
+  // =========================
   Widget _buildLineChart({
     required List<int?> data,
     required double maxX,
@@ -182,16 +221,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     if (spots.isEmpty) {
       return SizedBox(
         height: 150,
-        child: Center(
-          child: Text(emptyText),
-        ),
+        child: Center(child: Text(emptyText)),
       );
     }
 
     final values = spots.map((spot) => spot.y).toList();
+
     final minY = (values.reduce((a, b) => a < b ? a : b) - 5)
         .clamp(30, 220)
         .toDouble();
+
     final maxY = (values.reduce((a, b) => a > b ? a : b) + 5)
         .clamp(30, 220)
         .toDouble();
