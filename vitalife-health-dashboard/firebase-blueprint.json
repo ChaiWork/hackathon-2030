@@ -15,16 +15,20 @@
         "weight": { "type": "string" },
         "role": { "type": "string" },
         "lastLogin": { "type": "string", "format": "date-time" },
+        "fcmToken": { "type": "string", "description": "Token for Firebase Cloud Messaging (Push Notifications)" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email"]
     },
-    "HeartRateLog": {
-      "title": "Heart Rate Log",
-      "description": "Point-in-time health metrics including heart rate, steps, and SpO2.",
+    "VitalsLog": {
+      "title": "Vitals Log",
+      "description": "Point-in-time health metrics including heart rate, blood pressure, glucose, steps, and SpO2.",
       "type": "object",
       "properties": {
         "heartRate": { "type": "number" },
+        "systolic": { "type": "number", "description": "Systolic Blood Pressure" },
+        "diastolic": { "type": "number", "description": "Diastolic Blood Pressure" },
+        "glucose": { "type": "number", "description": "Blood Glucose Level (mg/dL or mmol/L)" },
         "steps": { "type": "number" },
         "spo2": { "type": ["number", "null"] },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -56,6 +60,33 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["heartRate", "risk", "summary", "advice", "date"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Alerts and health notifications for the user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "emergency"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "createdAt"]
+    },
+    "FamilyLink": {
+      "title": "Family Link",
+      "description": "Establish a connection between a user (patient) and a family member (caregiver).",
+      "type": "object",
+      "properties": {
+        "memberUid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "relation": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberUid", "email", "status"]
     }
   },
   "firestore": {
@@ -64,8 +95,8 @@
       "description": "User profile with biometric data."
     },
     "/users/{userId}/heart_rate_logs/{logId}": {
-      "schema": "HeartRateLog",
-      "description": "Historical heart rate data points for granular tracking."
+      "schema": "VitalsLog",
+      "description": "Historical vital signs data points for granular tracking including heart rate, BP, and glucose."
     },
     "/users/{userId}/heart_rate_breakdown/{breakdownId}": {
       "schema": "HeartRateBreakdown",
@@ -74,6 +105,14 @@
     "/users/{userId}/ai_insights/{insightId}": {
       "schema": "AIInsight",
       "description": "Critical AI-generated health warnings and tailored advice."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Time-sensitive alerts regarding health anomalies or system updates."
+    },
+    "/users/{userId}/family_links/{linkId}": {
+      "schema": "FamilyLink",
+      "description": "Trusted family members who receive emergency notifications."
     }
   }
 }

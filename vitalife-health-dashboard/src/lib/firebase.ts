@@ -17,20 +17,25 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc, 
+  writeBatch,
   query, 
   where, 
   orderBy, 
   limit, 
   onSnapshot,
+  getDocs,
   getDocFromServer,
+  getDocsFromServer,
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+export const functions = getFunctions(app, 'us-central1');
 export const googleProvider = new GoogleAuthProvider();
 
 // Utility for operation types
@@ -109,12 +114,16 @@ export {
   setDoc, 
   updateDoc, 
   deleteDoc, 
+  writeBatch,
   query, 
   where, 
   orderBy, 
   limit, 
   onSnapshot,
+  getDocs,
+  getDocsFromServer,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  httpsCallable
 };
 export type { User };
