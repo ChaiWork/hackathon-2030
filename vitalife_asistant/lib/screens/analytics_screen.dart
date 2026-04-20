@@ -84,6 +84,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+
+    // Keep design proportions but scale for phones/tablets/web.
+    final shortest = size.shortestSide;
+    final base = (shortest / 400).clamp(0.85, 1.25);
+    final horizontalPadding =
+        (size.width * 0.05).clamp(16.0, size.width >= 900 ? 40.0 : 28.0);
+    final verticalPadding = (size.height * 0.02).clamp(12.0, 24.0);
+    final sectionGap = (size.height * 0.025).clamp(14.0, 24.0);
+    final bottomGap = (size.height * 0.05).clamp(24.0, 48.0);
+    final titleFontSize = (24 * base).clamp(20.0, 30.0);
+
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(
@@ -92,14 +104,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         title: Text(
           'Analytics',
           style: GoogleFonts.montserrat(
-            fontSize: 24,
+            fontSize: titleFontSize,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryDeep,
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -108,7 +123,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               subtitle: 'Last 7 days',
               chart: _buildWeeklyHeartRateChart(),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: sectionGap),
 
             StatsRow(
               avgHr: _averageHeartRate?.toString() ?? '--',
@@ -116,7 +131,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               minHr: _minHeartRate?.toString() ?? '--',
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: sectionGap),
 
             ChartCard(
               title: 'Monthly Trend',
@@ -124,7 +139,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               chart: _buildMonthlyTrendChart(),
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: sectionGap),
 
             ChartCard(
               title: 'Daily Breakdown',
@@ -133,7 +148,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               chart: _buildDailyBreakdown(),
             ),
 
-            const SizedBox(height: 40),
+            SizedBox(height: bottomGap),
           ],
         ),
       ),
@@ -209,6 +224,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     required String emptyText,
     required String Function(int index) bottomLabelBuilder,
   }) {
+    final size = MediaQuery.sizeOf(context);
+    final shortest = size.shortestSide;
+    final base = (shortest / 400).clamp(0.85, 1.25);
+
+    final chartHeight =
+        (size.height * 0.20).clamp(140.0, size.width >= 900 ? 220.0 : 190.0);
+    final axisFontSize = (10 * base).clamp(9.0, 12.0);
+    final leftReservedSize = (32 * base).clamp(28.0, 44.0);
+    final bottomTitleTopPadding = (size.height * 0.008).clamp(4.0, 10.0);
+    final barWidth = (3 * base).clamp(2.5, 4.0);
+
     final spots = <FlSpot>[];
 
     for (var i = 0; i < data.length; i++) {
@@ -220,7 +246,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     if (spots.isEmpty) {
       return SizedBox(
-        height: 150,
+        height: chartHeight,
         child: Center(child: Text(emptyText)),
       );
     }
@@ -236,7 +262,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         .toDouble();
 
     return SizedBox(
-      height: 150,
+      height: chartHeight,
       child: LineChart(
         LineChartData(
           minX: 0,
@@ -259,11 +285,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 32,
+                reservedSize: leftReservedSize,
                 interval: 10,
                 getTitlesWidget: (value, meta) => Text(
                   value.toInt().toString(),
-                  style: const TextStyle(fontSize: 10),
+                  style: TextStyle(fontSize: axisFontSize),
                 ),
               ),
             ),
@@ -278,10 +304,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   final label = bottomLabelBuilder(index);
                   if (label.isEmpty) return const SizedBox.shrink();
                   return Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: EdgeInsets.only(top: bottomTitleTopPadding),
                     child: Text(
                       label,
-                      style: const TextStyle(fontSize: 10),
+                      style: TextStyle(fontSize: axisFontSize),
                     ),
                   );
                 },
@@ -292,7 +318,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             LineChartBarData(
               spots: spots,
               isCurved: true,
-              barWidth: 3,
+              barWidth: barWidth,
               color: AppColors.primaryDeep,
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(

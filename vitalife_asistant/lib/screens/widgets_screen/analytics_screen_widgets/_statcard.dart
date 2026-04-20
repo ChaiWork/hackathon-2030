@@ -17,8 +17,19 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final shortest = size.shortestSide;
+    final base = (shortest / 400).clamp(0.85, 1.25);
+
+    final pad = (size.width * 0.035).clamp(12.0, 18.0);
+    final labelFont = (11 * base).clamp(10.0, 13.0);
+    final valueFont = (20 * base).clamp(16.0, 24.0);
+    final unitFont = (10 * base).clamp(9.0, 12.0);
+    final innerGapH = (size.width * 0.01).clamp(3.0, 6.0);
+    final innerGapV = (size.height * 0.01).clamp(6.0, 10.0);
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
@@ -32,31 +43,41 @@ class StatCard extends StatelessWidget {
         children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.montserrat(
-              fontSize: 11,
+              fontSize: labelFont,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: innerGapV),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                value,
-                style: GoogleFonts.montserrat(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDeep,
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    fontSize: valueFont,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryDeep,
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Text(
-                unit,
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
-                  color: Colors.grey[600],
+              SizedBox(width: innerGapH),
+              Flexible(
+                child: Text(
+                  unit,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    fontSize: unitFont,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ),
             ],

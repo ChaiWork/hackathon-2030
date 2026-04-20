@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 
 class HealthCard extends StatelessWidget {
@@ -21,15 +22,27 @@ class HealthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final pad = r.gapH(0.04, min: 12, max: 18);
+    final radius = r.s(20, min: 16, max: 22);
+    final iconPad = r.s(8, min: 6, max: 10);
+    final iconRadius = r.s(12, min: 10, max: 14);
+    final iconSize = r.s(24, min: 20, max: 26);
+    final titleFont = r.s(12, min: 11, max: 13);
+    final valueFont = r.s(24, min: 18, max: 26);
+    final unitFont = r.s(12, min: 11, max: 13);
+    final gap1 = r.gapV(0.015, min: 8, max: 12);
+    final gap2 = r.gapV(0.008, min: 3, max: 6);
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
+            blurRadius: r.s(10, min: 8, max: 14),
             offset: const Offset(0, 4),
           ),
         ],
@@ -37,43 +50,51 @@ class HealthCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(iconPad),
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(iconRadius),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: iconSize),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: gap1),
           Text(
             title,
             style: GoogleFonts.montserrat(
-              fontSize: 12,
+              fontSize: titleFont,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: gap2),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                value,
-                style: GoogleFonts.montserrat(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    fontSize: valueFont,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
               if (unit.isNotEmpty)
-                Text(
-                  ' $unit',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    ' $unit',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.montserrat(
+                      fontSize: unitFont,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
             ],

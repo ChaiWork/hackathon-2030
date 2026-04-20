@@ -4,6 +4,7 @@ import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_gra
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_login_form.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_logo_section.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_signup_form.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -34,6 +35,9 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final betweenTabAndContent = r.gapV(0.05, min: 20, max: 48);
+
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
@@ -55,7 +59,7 @@ class _AuthScreenState extends State<AuthScreen>
                 },
               ),
 
-              const SizedBox(height: 48),
+              SizedBox(height: betweenTabAndContent),
 
               // Content Section with PageView-like animation
               Expanded(

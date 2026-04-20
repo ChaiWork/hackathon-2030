@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 
 class EmergencyDialog {
   static Future<void> show(BuildContext context) {
+    final r = Responsive.of(context);
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(r.s(20, min: 16, max: 22)),
+        ),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(r.s(8, min: 6, max: 10)),
               decoration: BoxDecoration(
                 color: AppColors.getErrorWithOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(r.s(10, min: 8, max: 12)),
               ),
-              child: const Icon(Icons.emergency, color: AppColors.error, size: 24),
+              child: Icon(
+                Icons.emergency,
+                color: AppColors.error,
+                size: r.s(24, min: 20, max: 28),
+              ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: r.gapH(0.03, min: 8, max: 12)),
             Text(
               'Emergency Alert',
               style: GoogleFonts.montserrat(
-                fontSize: 18,
+                fontSize: r.s(18, min: 16, max: 20),
                 fontWeight: FontWeight.bold,
                 color: AppColors.error,
               ),
@@ -33,7 +41,10 @@ class EmergencyDialog {
         ),
         content: Text(
           'Notifying emergency contacts...',
-          style: GoogleFonts.montserrat(fontSize: 14, color: Colors.grey[700]),
+          style: GoogleFonts.montserrat(
+            fontSize: r.s(14, min: 12, max: 15),
+            color: Colors.grey[700],
+          ),
         ),
         actions: [
           TextButton(
@@ -60,7 +71,7 @@ class EmergencyDialog {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(r.s(10, min: 8, max: 12)),
               ),
             ),
             child: Text(

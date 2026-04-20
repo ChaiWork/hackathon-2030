@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 
 class ProfileHeader extends StatelessWidget {
@@ -17,11 +18,24 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final pad = r.gapH(0.05, min: 16, max: 24);
+    final radius = r.s(16, min: 14, max: 18);
+    final avatar = r.s(80, min: 64, max: 88);
+    final avatarRadius = r.s(16, min: 14, max: 18);
+    final iconSize = r.s(40, min: 32, max: 44);
+    final gap = r.gapH(0.04, min: 12, max: 16);
+    final nameFont = r.s(18, min: 16, max: 20);
+    final subFont = r.s(12, min: 11, max: 13);
+    final badgeFont = r.s(11, min: 10, max: 12);
+    final badgePadH = r.s(12, min: 10, max: 14);
+    final badgePadV = r.s(4, min: 3, max: 6);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(
           color: AppColors.primaryMedium.withOpacity(0.3),
           width: 1.5,
@@ -37,46 +51,49 @@ class ProfileHeader extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 80,
-            height: 80,
+            width: avatar,
+            height: avatar,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.primaryDark, AppColors.primaryDeep],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(avatarRadius),
             ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 40,
-            ),
+            child: Icon(Icons.person, color: Colors.white, size: iconSize),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: gap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.montserrat(
-                    fontSize: 18,
+                    fontSize: nameFont,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: r.gapV(0.005, min: 3, max: 6)),
                 Text(
                   '$age years • $lifestyle',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                    fontSize: subFont,
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: r.gapV(0.012, min: 6, max: 10)),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: badgePadH,
+                    vertical: badgePadV,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.getPrimaryWithOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -84,7 +101,7 @@ class ProfileHeader extends StatelessWidget {
                   child: Text(
                     'Member since 2024',
                     style: GoogleFonts.montserrat(
-                      fontSize: 11,
+                      fontSize: badgeFont,
                       color: AppColors.primaryDeep,
                       fontWeight: FontWeight.w600,
                     ),

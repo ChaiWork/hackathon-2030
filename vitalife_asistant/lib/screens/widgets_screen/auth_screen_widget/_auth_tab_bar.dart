@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 class AuthTabBar extends StatelessWidget {
   final int selectedTab;
@@ -13,8 +14,15 @@ class AuthTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final padH = r.gapH(0.06, min: 16, max: 28);
+    final tabGap = r.gapH(0.06, min: 20, max: 32);
+    final labelFont = r.s(18, min: 14, max: 18);
+    final underlineH = r.s(3, min: 2, max: 3);
+    final underlineGap = r.gapV(0.01, min: 6, max: 10);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: padH),
       child: Row(
         children: [
           Expanded(
@@ -25,15 +33,15 @@ class AuthTabBar extends StatelessWidget {
                   Text(
                     'LOGIN',
                     style: GoogleFonts.montserrat(
-                      fontSize: 18,
+                      fontSize: labelFont,
                       fontWeight: FontWeight.w600,
                       color: selectedTab == 0 ? Colors.white : Colors.white60,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: underlineGap),
                   if (selectedTab == 0)
                     Container(
-                      height: 3,
+                      height: underlineH,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(2),
@@ -43,7 +51,7 @@ class AuthTabBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 32),
+          SizedBox(width: tabGap),
           Expanded(
             child: GestureDetector(
               onTap: () => onTabChanged(1),
@@ -52,15 +60,15 @@ class AuthTabBar extends StatelessWidget {
                   Text(
                     'SIGN UP',
                     style: GoogleFonts.montserrat(
-                      fontSize: 18,
+                      fontSize: labelFont,
                       fontWeight: FontWeight.w600,
                       color: selectedTab == 1 ? Colors.white : Colors.white60,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: underlineGap),
                   if (selectedTab == 1)
                     Container(
-                      height: 3,
+                      height: underlineH,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(2),

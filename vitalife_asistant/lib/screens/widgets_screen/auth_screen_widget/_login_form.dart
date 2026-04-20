@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_auth_text_field.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_transparent_3d_button.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 class LoginForm extends StatefulWidget {
   final AnimationController animationController;
@@ -46,136 +47,158 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final padH = r.gapH(0.06, min: 16, max: 28);
+    final sectionGap = r.gapV(0.025, min: 16, max: 32);
+    final smallGap = r.gapV(0.018, min: 12, max: 24);
+    final footerGap = r.gapV(0.05, min: 28, max: 40);
+    final linkFont = r.s(14, min: 12, max: 14);
+    final dividerTextFont = r.s(12, min: 11, max: 12);
+    final googleBtnH = r.s(55, min: 48, max: 60);
+    final googleLogo = r.s(24, min: 20, max: 26);
+    final googleIcon = r.s(20, min: 18, max: 22);
+    final googleGap = r.gapH(0.03, min: 8, max: 12);
+    final googleFont = r.s(14, min: 12, max: 14);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          // Email Input
-          AuthTextField(
-            controller: _emailController,
-            hint: 'Email Address',
-            icon: Icons.mail_outline,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 24),
-
-          // Password Input
-          AuthTextField(
-            controller: _passwordController,
-            hint: 'Password',
-            icon: Icons.lock_outline,
-            isPassword: true,
-            obscurePassword: _obscurePassword,
-            onPasswordToggle: () {
-              setState(() => _obscurePassword = !_obscurePassword);
-            },
-          ),
-
-          const SizedBox(height: 32),
-
-          // Login Button
-          Transparent3DButton(
-            label: _isLoading ? 'LOGGING IN...' : 'LOGIN',
-            onPressed: _isLoading ? () {} : _handleLogin,
-          ),
-
-          const SizedBox(height: 20),
-
-          // Forgot Password Link
-          GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password recovery coming soon'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            child: Text(
-              'Forgot Password?',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // OR Divider
-          const Row(
+      padding: EdgeInsets.symmetric(horizontal: padH),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
             children: [
-              Expanded(child: Divider(color: Colors.white30)),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              // Email Input
+              AuthTextField(
+                controller: _emailController,
+                hint: 'Email Address',
+                icon: Icons.mail_outline,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              SizedBox(height: smallGap),
+
+              // Password Input
+              AuthTextField(
+                controller: _passwordController,
+                hint: 'Password',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscurePassword: _obscurePassword,
+                onPasswordToggle: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              ),
+
+              SizedBox(height: sectionGap),
+
+              // Login Button
+              Transparent3DButton(
+                label: _isLoading ? 'LOGGING IN...' : 'LOGIN',
+                onPressed: _isLoading ? () {} : _handleLogin,
+              ),
+
+              SizedBox(height: r.gapV(0.02, min: 14, max: 20)),
+
+              // Forgot Password Link
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password recovery coming soon'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
                 child: Text(
-                  'OR',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                  'Forgot Password?',
+                  style: GoogleFonts.montserrat(
+                    fontSize: linkFont,
+                    color: Colors.white70,
+                  ),
                 ),
               ),
-              Expanded(child: Divider(color: Colors.white30)),
-            ],
-          ),
 
-          const SizedBox(height: 20),
+              SizedBox(height: r.gapV(0.02, min: 14, max: 20)),
 
-          // Google Sign In Button
-          _buildGoogleSignInButton(),
+              // OR Divider
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: Colors.white30)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: googleGap),
+                    child: Text(
+                      'OR',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: dividerTextFont,
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: Divider(color: Colors.white30)),
+                ],
+              ),
 
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
+              SizedBox(height: r.gapV(0.02, min: 14, max: 20)),
 
-  Widget _buildGoogleSignInButton() {
-    return GestureDetector(
-      onTap: _isLoading ? null : _handleGoogleSignIn,
-      child: Container(
-        height: 55,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.white, Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              offset: const Offset(0, 5),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Google Logo
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: const Icon(
-                  Icons.g_mobiledata,
-                  size: 20,
-                  color: Colors.black87,
+              // Google Sign In Button
+              GestureDetector(
+                onTap: _isLoading ? null : _handleGoogleSignIn,
+                child: Container(
+                  height: googleBtnH,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.white, Colors.white],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(r.s(15, min: 12, max: 16)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        offset: const Offset(0, 5),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: googleLogo,
+                          height: googleLogo,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          child: Icon(
+                            Icons.g_mobiledata,
+                            size: googleIcon,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(width: googleGap),
+                        Flexible(
+                          child: Text(
+                            _isLoading
+                                ? 'SIGNING IN...'
+                                : 'CONTINUE WITH GOOGLE',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.montserrat(
+                              fontSize: googleFont,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                              letterSpacing: r.s(1.2, min: 1.0, max: 1.2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                _isLoading ? 'SIGNING IN...' : 'CONTINUE WITH GOOGLE',
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                  letterSpacing: 1.2,
-                ),
-              ),
+
+              SizedBox(height: footerGap),
             ],
           ),
         ),
