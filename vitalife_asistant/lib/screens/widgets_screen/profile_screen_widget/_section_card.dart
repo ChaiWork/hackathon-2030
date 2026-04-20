@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 class SectionCard extends StatelessWidget {
   final String title;
@@ -21,10 +22,20 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final radius = r.s(16, min: 14, max: 18);
+    final headerPad = r.gapH(0.04, min: 12, max: 18);
+    final iconPad = r.s(8, min: 6, max: 10);
+    final iconRadius = r.s(10, min: 8, max: 12);
+    final iconSize = r.s(20, min: 18, max: 22);
+    final titleFont = r.s(16, min: 14, max: 18);
+    final contentPad = r.gapH(0.04, min: 12, max: 18);
+    final contentGap = r.gapV(0.02, min: 12, max: 18);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(
           color: AppColors.primaryMedium.withOpacity(0.3),
           width: 1.5,
@@ -41,7 +52,7 @@ class SectionCard extends StatelessWidget {
         children: [
           // HEADER
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(headerPad),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
@@ -52,19 +63,21 @@ class SectionCard extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(iconPad),
                   decoration: BoxDecoration(
                     color: AppColors.getPrimaryWithOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(iconRadius),
                   ),
-                  child: Icon(icon, color: AppColors.primaryDeep, size: 20),
+                  child: Icon(icon, color: AppColors.primaryDeep, size: iconSize),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: r.gapH(0.03, min: 8, max: 12)),
                 Expanded(
                   child: Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.montserrat(
-                      fontSize: 16,
+                      fontSize: titleFont,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryDeep,
                     ),
@@ -76,13 +89,13 @@ class SectionCard extends StatelessWidget {
 
           // CONTENT
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(contentPad),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ...children,
 
-                const SizedBox(height: 16),
+                SizedBox(height: contentGap),
 
                 // EDIT BUTTON BELOW WEIGHT
                 if (showEditButton)
@@ -95,9 +108,11 @@ class SectionCard extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDeep,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.symmetric(
+                          vertical: r.s(12, min: 10, max: 14),
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(r.s(12, min: 10, max: 14)),
                         ),
                       ),
                     ),

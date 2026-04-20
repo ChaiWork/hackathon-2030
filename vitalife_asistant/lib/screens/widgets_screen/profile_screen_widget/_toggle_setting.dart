@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 
 class ToggleSetting extends StatelessWidget {
@@ -17,15 +18,19 @@ class ToggleSetting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final padV = r.gapV(0.01, min: 6, max: 10);
+    final font = r.s(14, min: 12, max: 15);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: padV),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: GoogleFonts.montserrat(
-              fontSize: 14,
+              fontSize: font,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),

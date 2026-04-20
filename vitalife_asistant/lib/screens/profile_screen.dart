@@ -6,6 +6,7 @@ import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_info_row.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_section_card.dart';
 import 'package:vitalife_asistant/services/firestore_service.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 // IMPORT SERVICE
 
 
@@ -158,6 +159,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =========================
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final titleFont = r.s(24, min: 20, max: 30);
+    final sectionGap = r.gapV(0.03, min: 16, max: 25);
+
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(
@@ -165,18 +170,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: Text(
           'Profile',
           style: GoogleFonts.montserrat(
-            fontSize: 24,
+            fontSize: titleFont,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryDeep,
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: r.screenPadding,
         child: Column(
           children: [
             _buildHeader(),
-            const SizedBox(height: 25),
+            SizedBox(height: sectionGap),
 
             SectionCard(
               title: 'Basic Information',
@@ -193,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: r.gapV(0.025, min: 14, max: 20)),
 
             ActionButton(
               label: 'Logout',
@@ -214,32 +219,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // HEADER
   // =========================
   Widget _buildHeader() {
+    final r = Responsive.of(context);
+    final pad = r.gapH(0.05, min: 16, max: 24);
+    final radius = r.s(20, min: 16, max: 22);
+    final avatarRadius = r.s(28, min: 22, max: 32);
+    final gap = r.gapH(0.04, min: 12, max: 16);
+    final nameFont = r.s(18, min: 16, max: 20);
+    final emailFont = r.s(14, min: 12, max: 15);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 28,
+            radius: avatarRadius,
             backgroundColor: AppColors.primaryDeep,
             child: Text(
               fullName.isNotEmpty ? fullName[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: r.s(16, min: 14, max: 18),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(fullName,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(email,
-                  style: TextStyle(color: Colors.grey[600])),
-            ],
+          SizedBox(width: gap),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: nameFont,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: emailFont,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
           )
         ],
       ),

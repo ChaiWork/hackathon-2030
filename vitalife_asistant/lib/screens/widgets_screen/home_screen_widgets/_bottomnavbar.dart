@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vitalife_asistant/screens/constant/Color.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 
 class CustomBottomNavBar extends StatelessWidget {
@@ -15,13 +16,16 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final labelFont = r.s(12, min: 11, max: 13);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
         boxShadow: [
           BoxShadow(
             color: AppColors.getPrimaryWithOpacity(0.1),
-            blurRadius: 20,
+            blurRadius: r.s(20, min: 16, max: 24),
             offset: const Offset(0, -4),
           ),
         ],
@@ -36,11 +40,11 @@ class CustomBottomNavBar extends StatelessWidget {
         elevation: 0,
         selectedLabelStyle: GoogleFonts.montserrat(
           fontWeight: FontWeight.w600,
-          fontSize: 12,
+          fontSize: labelFont,
         ),
         unselectedLabelStyle: GoogleFonts.montserrat(
           fontWeight: FontWeight.w500,
-          fontSize: 12,
+          fontSize: labelFont,
         ),
         items: const [
           BottomNavigationBarItem(

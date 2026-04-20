@@ -19,8 +19,20 @@ class ChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final shortest = size.shortestSide;
+    final base = (shortest / 400).clamp(0.85, 1.25);
+
+    final cardPadding = (size.width * 0.04).clamp(14.0, 24.0);
+    final titleFontSize = (16 * base).clamp(14.0, 18.0);
+    final subtitleFontSize = (12 * base).clamp(11.0, 14.0);
+    final iconPad = (8 * base).clamp(6.0, 10.0);
+    final iconSize = (20 * base).clamp(18.0, 24.0);
+    final headerGap = (size.height * 0.006).clamp(3.0, 6.0);
+    final contentGap = (size.height * 0.02).clamp(16.0, 28.0);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -42,29 +54,36 @@ class ChartCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryDeep,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryDeep,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                    SizedBox(height: headerGap),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(
+                        fontSize: subtitleFontSize,
+                        color: Colors.grey[600],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              SizedBox(width: (size.width * 0.02).clamp(8.0, 16.0)),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(iconPad),
                 decoration: BoxDecoration(
                   color: AppColors.getPrimaryWithOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -72,16 +91,16 @@ class ChartCard extends StatelessWidget {
                 child: Icon(
                   icon ?? Icons.show_chart,
                   color: AppColors.primaryDeep,
-                  size: 20,
+                  size: iconSize,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: contentGap),
           // Chart Content
           chart ??
               Container(
-                height: 150,
+                height: (size.height * 0.20).clamp(140.0, size.width >= 900 ? 220.0 : 190.0),
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(12),
@@ -90,7 +109,7 @@ class ChartCard extends StatelessWidget {
                   child: Text(
                     'Chart will be displayed here\n(Integration with charts library pending)',
                     style: GoogleFonts.montserrat(
-                      fontSize: 12,
+                      fontSize: subtitleFontSize,
                       color: Colors.grey[600],
                     ),
                     textAlign: TextAlign.center,

@@ -16,7 +16,10 @@ class StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final size = MediaQuery.sizeOf(context);
+    final gap = (size.width * 0.03).clamp(8.0, 16.0);
+
+    final row = Row(
       children: [
         Expanded(
           child: StatCard(
@@ -25,7 +28,7 @@ class StatsRow extends StatelessWidget {
             unit: 'bpm',
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: gap),
         Expanded(
           child: StatCard(
             label: 'Peak HR',
@@ -33,7 +36,7 @@ class StatsRow extends StatelessWidget {
             unit: 'bpm',
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: gap),
         Expanded(
           child: StatCard(
             label: 'Min HR',
@@ -42,6 +45,44 @@ class StatsRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    // Preserves the row layout; on very narrow screens we allow horizontal scroll
+    // instead of letting cards overflow.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minCardWidth =
+            (constraints.maxWidth * 0.32).clamp(120.0, 180.0);
+        final minNeeded = 3 * minCardWidth + 2 * gap;
+        final shouldScroll = constraints.maxWidth < minNeeded;
+
+        if (!shouldScroll) return row;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: minNeeded),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: minCardWidth,
+                  child: StatCard(label: 'Avg HR', value: avgHr, unit: 'bpm'),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: minCardWidth,
+                  child: StatCard(label: 'Peak HR', value: peakHr, unit: 'bpm'),
+                ),
+                SizedBox(width: gap),
+                SizedBox(
+                  width: minCardWidth,
+                  child: StatCard(label: 'Min HR', value: minHr, unit: 'bpm'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

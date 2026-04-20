@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_auth_text_field.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/auth_screen_widget/_transparent_3d_button.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 
 class SignUpForm extends StatefulWidget {
@@ -37,61 +38,73 @@ class _SignUpFormState extends State<SignUpForm> {
 
   @override
   Widget build(BuildContext context) {
+    final r = Responsive.of(context);
+    final padH = r.gapH(0.06, min: 16, max: 28);
+    final fieldGap = r.gapV(0.02, min: 12, max: 20);
+    final sectionGap = r.gapV(0.025, min: 16, max: 32);
+    final footerGap = r.gapV(0.05, min: 28, max: 40);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          // Full Name Input
-          AuthTextField(
-            controller: _nameController,
-            hint: 'Full Name',
-            icon: Icons.person_outline,
-          ),
-          const SizedBox(height: 20),
+      padding: EdgeInsets.symmetric(horizontal: padH),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            children: [
+              // Full Name Input
+              AuthTextField(
+                controller: _nameController,
+                hint: 'Full Name',
+                icon: Icons.person_outline,
+              ),
+              SizedBox(height: fieldGap),
 
-          // Email Input
-          AuthTextField(
-            controller: _emailController,
-            hint: 'Email Address',
-            icon: Icons.mail_outline,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 20),
+              // Email Input
+              AuthTextField(
+                controller: _emailController,
+                hint: 'Email Address',
+                icon: Icons.mail_outline,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              SizedBox(height: fieldGap),
 
-          // Password Input
-          AuthTextField(
-            controller: _passwordController,
-            hint: 'Password',
-            icon: Icons.lock_outline,
-            isPassword: true,
-            obscurePassword: _obscurePassword,
-            onPasswordToggle: () {
-              setState(() => _obscurePassword = !_obscurePassword);
-            },
-          ),
-          const SizedBox(height: 20),
+              // Password Input
+              AuthTextField(
+                controller: _passwordController,
+                hint: 'Password',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscurePassword: _obscurePassword,
+                onPasswordToggle: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              ),
+              SizedBox(height: fieldGap),
 
-          // Confirm Password Input
-          AuthTextField(
-            controller: _confirmPasswordController,
-            hint: 'Confirm Password',
-            icon: Icons.lock_outline,
-            isPassword: true,
-            obscurePassword: _obscureConfirmPassword,
-            onPasswordToggle: () {
-              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
-            },
-          ),
+              // Confirm Password Input
+              AuthTextField(
+                controller: _confirmPasswordController,
+                hint: 'Confirm Password',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscurePassword: _obscureConfirmPassword,
+                onPasswordToggle: () {
+                  setState(() =>
+                      _obscureConfirmPassword = !_obscureConfirmPassword);
+                },
+              ),
 
-          const SizedBox(height: 32),
+              SizedBox(height: sectionGap),
 
-          // Sign Up Button
-          Transparent3DButton(
-            label: _isLoading ? 'CREATING...' : 'SIGN UP',
-            onPressed: _isLoading ? () {} : _handleSignUp,
+              // Sign Up Button
+              Transparent3DButton(
+                label: _isLoading ? 'CREATING...' : 'SIGN UP',
+                onPressed: _isLoading ? () {} : _handleSignUp,
+              ),
+              SizedBox(height: footerGap),
+            ],
           ),
-          const SizedBox(height: 40),
-        ],
+        ),
       ),
     );
   }

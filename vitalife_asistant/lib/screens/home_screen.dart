@@ -14,6 +14,7 @@ import 'package:vitalife_asistant/screens/widgets_screen/home_screen_widgets/_em
 import 'package:vitalife_asistant/services/firestore_service.dart';
 import 'package:vitalife_asistant/services/gemini_genkit.dart';
 import 'package:vitalife_asistant/services/health_service.dart';
+import 'package:vitalife_asistant/ui/responsive.dart';
 
 import 'analytics_screen.dart';
 import 'profile_screen.dart';
@@ -209,55 +210,160 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeTab() {
+    final r = Responsive.of(context);
+    final titleFont = r.s(24, min: 20, max: 30);
+    final sectionGap = r.gapV(0.025, min: 14, max: 24);
+    final cardGap = r.gapH(0.025, min: 8, max: 12);
+    final emergencyH = r.s(70, min: 56, max: 80);
+    final emergencyRadius = r.s(20, min: 16, max: 22);
+
     return RefreshIndicator(
       onRefresh: _loadHealthData,
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: r.screenPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Today's Status",
-                    style: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Flexible(
+                    child: Text(
+                      "Today's Status",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(
+                        fontSize: titleFont,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                   
                   // NEW: Notification Bell with Badge
                   _buildNotificationBell(),
                 ],
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(child: HealthCard(
-                    title: 'Current', value: '${_currentHeartRate ?? "--"}', unit: 'bpm',
-                    icon: Icons.favorite, color: Colors.red)),
-                  const SizedBox(width: 10),
-                  Expanded(child: HealthCard(
-                    title: 'Average', value: '${_averageHeartRate ?? "--"}', unit: 'bpm',
-                    icon: Icons.trending_up, color: Colors.blue)),
-                  const SizedBox(width: 10),
-                  Expanded(child: HealthCard(
-                    title: 'Risk', value: _riskLevel, unit: '',
-                    icon: Icons.security, color: Colors.orange)),
-                ],
+              SizedBox(height: sectionGap),
+
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final minCardW = r.clamp(constraints.maxWidth * 0.30, 120, 200);
+                  final minNeeded = 3 * minCardW + 2 * cardGap;
+                  final shouldScroll = constraints.maxWidth < minNeeded;
+
+                  final row = Row(
+                    children: [
+                      Expanded(
+                        child: HealthCard(
+                          title: 'Current',
+                          value: '${_currentHeartRate ?? "--"}',
+                          unit: 'bpm',
+                          icon: Icons.favorite,
+                          color: Colors.red,
+                        ),
+                      ),
+                      SizedBox(width: cardGap),
+                      Expanded(
+                        child: HealthCard(
+                          title: 'Average',
+                          value: '${_averageHeartRate ?? "--"}',
+                          unit: 'bpm',
+                          icon: Icons.trending_up,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      SizedBox(width: cardGap),
+                      Expanded(
+                        child: HealthCard(
+                          title: 'Risk',
+                          value: _riskLevel,
+                          unit: '',
+                          icon: Icons.security,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  );
+
+                  if (!shouldScroll) return row;
+
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: minNeeded),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: minCardW,
+                            child: HealthCard(
+                              title: 'Current',
+                              value: '${_currentHeartRate ?? "--"}',
+                              unit: 'bpm',
+                              icon: Icons.favorite,
+                              color: Colors.red,
+                            ),
+                          ),
+                          SizedBox(width: cardGap),
+                          SizedBox(
+                            width: minCardW,
+                            child: HealthCard(
+                              title: 'Average',
+                              value: '${_averageHeartRate ?? "--"}',
+                              unit: 'bpm',
+                              icon: Icons.trending_up,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          SizedBox(width: cardGap),
+                          SizedBox(
+                            width: minCardW,
+                            child: HealthCard(
+                              title: 'Risk',
+                              value: _riskLevel,
+                              unit: '',
+                              icon: Icons.security,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 25),
+
+              SizedBox(height: sectionGap),
               AIInsightCard(insight: _aiInsight, isLoading: _isLoading, onRefresh: _loadHealthData),
-              const SizedBox(height: 25),
+              SizedBox(height: sectionGap),
               GestureDetector(
                 onTap: () => EmergencyDialog.show(context),
                 child: Container(
-                  height: 70,
+                  height: emergencyH,
                   decoration: BoxDecoration(
                     gradient: AppColors.emergencyGradient,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+                    borderRadius: BorderRadius.circular(emergencyRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.3),
+                        blurRadius: r.s(10, min: 8, max: 14),
+                        offset: const Offset(0, 5),
+                      )
+                    ],
                   ),
-                  child: const Center(
-                    child: Text("EMERGENCY",
-                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2))),
+                  child: Center(
+                    child: Text(
+                      "EMERGENCY",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: r.s(20, min: 16, max: 22),
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: r.s(2, min: 1.5, max: 2),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -268,6 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNotificationBell() {
+    final r = Responsive.of(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users').doc(user?.uid).collection('notifications')
@@ -277,18 +384,30 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(
           children: [
             IconButton(
-              icon: Icon(Icons.notifications_none, color: AppColors.primaryDark, size: 28),
+              icon: Icon(
+                Icons.notifications_none,
+                color: AppColors.primaryDark,
+                size: r.s(28, min: 24, max: 32),
+              ),
               onPressed: _showNotificationTray,
             ),
             if (count > 0)
               Positioned(
-                right: 8, top: 8,
+                right: r.s(8, min: 6, max: 10),
+                top: r.s(8, min: 6, max: 10),
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(r.s(4, min: 3, max: 5)),
                   decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  constraints: BoxConstraints(
+                    minWidth: r.s(16, min: 14, max: 18),
+                    minHeight: r.s(16, min: 14, max: 18),
+                  ),
                   child: Text('$count', 
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: r.s(10, min: 9, max: 11),
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center),
                 ),
               )
@@ -308,71 +427,145 @@ class _NotificationTray extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40, height: 4, margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+    final r = Responsive.of(context);
+    final trayH = r.clamp(r.h * 0.7, 360, r.h);
+    final radius = r.s(30, min: 22, max: 34);
+    final handleW = r.s(40, min: 34, max: 46);
+    final handleH = r.s(4, min: 3, max: 5);
+    final headerPadH = r.gapH(0.06, min: 16, max: 24);
+    final headerPadV = r.gapV(0.01, min: 6, max: 10);
+    final headerFont = r.s(20, min: 16, max: 22);
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900),
+        child: Container(
+          height: trayH,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Notifications", style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold)),
-                TextButton(
-                  onPressed: () => _clearAll(context),
-                  child: const Text("Clear All", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          child: Column(
+            children: [
+              Container(
+                width: handleW,
+                height: handleH,
+                margin: EdgeInsets.symmetric(vertical: r.s(12, min: 10, max: 14)),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(r.s(2, min: 2, max: 3)),
                 ),
-              ],
-            ),
-          ),
-          const Divider(),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').orderBy('createdAt', descending: true).snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                if (snapshot.data!.docs.isEmpty) return const Center(child: Text("All caught up! ✨"));
-
-                return ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemBuilder: (context, index) {
-                    var doc = snapshot.data!.docs[index];
-                    var data = doc.data() as Map<String, dynamic>;
-                    bool isEmergency = data['type'] == 'emergency';
-
-                    return Dismissible(
-                      key: Key(doc.id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
-                        color: Colors.red, child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      onDismissed: (_) => doc.reference.delete(),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isEmergency ? Colors.red.shade100 : Colors.blue.shade100,
-                          child: Icon(isEmergency ? Icons.warning : Icons.info, color: isEmergency ? Colors.red : Colors.blue, size: 20),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: headerPadH, vertical: headerPadV),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "Notifications",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.montserrat(
+                          fontSize: headerFont,
+                          fontWeight: FontWeight.bold,
                         ),
-                        title: Text(data['title'] ?? "", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                        subtitle: Text(data['message'] ?? "", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        trailing: IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => doc.reference.delete()),
                       ),
+                    ),
+                    TextButton(
+                      onPressed: () => _clearAll(context),
+                      child: Text(
+                        "Clear All",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: r.s(14, min: 12, max: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(uid)
+                      .collection('notifications')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.data!.docs.isEmpty) {
+                      return const Center(child: Text("All caught up! ✨"));
+                    }
+
+                    return ListView.builder(
+                      itemCount: snapshot.data!.docs.length,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: r.gapH(0.04, min: 12, max: 20),
+                      ),
+                      itemBuilder: (context, index) {
+                        var doc = snapshot.data!.docs[index];
+                        var data = doc.data() as Map<String, dynamic>;
+                        bool isEmergency = data['type'] == 'emergency';
+
+                        return Dismissible(
+                          key: Key(doc.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.only(right: r.s(20, min: 16, max: 24)),
+                            color: Colors.red,
+                            child: const Icon(Icons.delete, color: Colors.white),
+                          ),
+                          onDismissed: (_) => doc.reference.delete(),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isEmergency
+                                  ? Colors.red.shade100
+                                  : Colors.blue.shade100,
+                              child: Icon(
+                                isEmergency ? Icons.warning : Icons.info,
+                                color: isEmergency ? Colors.red : Colors.blue,
+                                size: r.s(20, min: 18, max: 22),
+                              ),
+                            ),
+                            title: Text(
+                              data['title'] ?? "",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: r.s(14, min: 12, max: 14),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              data['message'] ?? "",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: r.s(12, min: 11, max: 12),
+                                color: Colors.grey,
+                              ),
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.close, size: r.s(16, min: 14, max: 18)),
+                              onPressed: () => doc.reference.delete(),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
