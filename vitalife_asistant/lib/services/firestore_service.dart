@@ -202,4 +202,44 @@ class FirestoreService {
       print("Error syncing FCM Token: $e");
     }
   }
+
+  Future<Map<String, dynamic>?> getLatestAIInsight(String uid) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('ai_insights')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    return snapshot.docs.first.data();
+  }
+
+  // =========================
+  // SAVE NOTIFICATION
+  // =========================
+  Future<void> saveNotification({
+    required String uid,
+    required String name,
+    required String title,
+    required String message,
+    required String type,
+    String? link,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('notifications')
+        .add({
+          'name': name, // 👈 store user name here
+          'title': title,
+          'message': message,
+          'type': type,
+          'link': link,
+          'read': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+  }
 }

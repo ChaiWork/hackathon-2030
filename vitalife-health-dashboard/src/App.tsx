@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import type { JSX as ReactJSX } from 'react';
 import { 
   Heart, 
   MapPin, 

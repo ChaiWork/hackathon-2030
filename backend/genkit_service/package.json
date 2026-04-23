@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@genkit-ai/google-genai": "^1.32.0",
+    "@genkit-ai/googleai": "^1.28.0",
     "dotenv": "^17.4.2"
   },
   "devDependencies": {

@@ -9,7 +9,6 @@ import 'package:vitalife_asistant/services/firestore_service.dart';
 import 'package:vitalife_asistant/ui/responsive.dart';
 // IMPORT SERVICE
 
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -26,7 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // USER INFO
   String fullName = '';
   String email = '';
-
+  String selectedGender = '';
   // HEALTH DATA
   String age = '';
   String gender = '';
@@ -70,8 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =========================
   // DISPLAY HELPERS
   // =========================
-  String get displayAge =>
-      age.isEmpty ? 'Please insert the values' : age;
+  String get displayAge => age.isEmpty ? 'Please insert the values' : age;
 
   String get displayGender =>
       gender.isEmpty ? 'Please insert the values' : gender;
@@ -87,68 +85,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =========================
   void _editBasicInfo() {
     final ageController = TextEditingController(text: age);
-    final genderController = TextEditingController(text: gender);
+    selectedGender = gender;
     final heightController = TextEditingController(text: height);
     final weightController = TextEditingController(text: weight);
 
+    final r = Responsive.of(context);
+
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Basic Information"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: ageController,
-                  decoration: const InputDecoration(labelText: "Age"),
-                ),
-                TextField(
-                  controller: genderController,
-                  decoration: const InputDecoration(labelText: "Gender"),
-                ),
-                TextField(
-                  controller: heightController,
-                  decoration: const InputDecoration(labelText: "Height"),
-                ),
-                TextField(
-                  controller: weightController,
-                  decoration: const InputDecoration(labelText: "Weight"),
-                ),
-              ],
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // HEADER
+                  Row(
+                    children: [
+                      const Icon(Icons.edit, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Edit Profile",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // INPUT FIELDS
+                  _buildInputField("Age", ageController, Icons.cake),
+                  _buildGenderDropdown(),
+                  _buildInputField(
+                    "Height (cm)",
+                    heightController,
+                    Icons.height,
+                  ),
+                  _buildInputField(
+                    "Weight (kg)",
+                    weightController,
+                    Icons.monitor_weight,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // BUTTONS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text("Cancel"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final uid = _auth.currentUser!.uid;
+
+                            setState(() {
+                              age = ageController.text.trim();
+                              gender = selectedGender;
+                              height = heightController.text.trim();
+                              weight = weightController.text.trim();
+                            });
+
+                            await _firestoreService.saveUserProfile(
+                              uid: uid,
+                              age: age,
+                              gender: gender,
+                              height: height,
+                              weight: weight,
+                              email: email,
+                              fullName: fullName,
+                            );
+
+                            Navigator.pop(context);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Profile updated successfully ✅"),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryDeep,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text("Save"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final uid = _auth.currentUser!.uid;
-
-                setState(() {
-                  age = ageController.text.trim();
-                  gender = genderController.text.trim();
-                  height = heightController.text.trim();
-                  weight = weightController.text.trim();
-                });
-
-                await _firestoreService.saveUserProfile(
-                  uid: uid,
-                  age: age,
-                  gender: gender,
-                  height: height,
-                  weight: weight,
-                  email: email,
-                  fullName: fullName,
-                );
-
-                Navigator.pop(context);
-              },
-              child: const Text("Save"),
-            ),
-          ],
         );
       },
     );
@@ -272,9 +327,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
+
+  Widget _buildGenderDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        value: selectedGender.isNotEmpty ? selectedGender : null,
+        items: const [
+          DropdownMenuItem(value: "Male", child: Text("Male")),
+          DropdownMenuItem(value: "Female", child: Text("Female")),
+          DropdownMenuItem(
+            value: "Rather not say",
+            child: Text("Rather not say"),
+          ),
+        ],
+        onChanged: (value) {
+          setState(() {
+            selectedGender = value!;
+          });
+        },
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.person, color: Colors.grey),
+          labelText: "Gender",
+          filled: true,
+          fillColor: const Color(0xFFF5F7FB),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 14,
+            horizontal: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Widget _buildInputField(
+  String label,
+  TextEditingController controller,
+  IconData icon,
+) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: controller,
+      keyboardType: TextInputType.text,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.grey),
+        labelText: label,
+        filled: true,
+        fillColor: const Color(0xFFF5F7FB),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    ),
+  );
 }
