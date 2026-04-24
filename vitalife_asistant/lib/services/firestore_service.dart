@@ -123,7 +123,7 @@ class FirestoreService {
   }
 
   // =========================
-  // GET USER PROFILE
+  // GET USER PROFILE (One-time fetch)
   // =========================
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {
     final doc = await _firestore.collection('users').doc(uid).get();
@@ -132,6 +132,18 @@ class FirestoreService {
       return doc.data();
     }
     return null;
+  }
+
+  // =========================
+  // REAL-TIME USER PROFILE STREAM
+  // =========================
+  Stream<Map<String, dynamic>?> getUserProfileStream(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map((snapshot) {
+      if (snapshot.exists) {
+        return snapshot.data();
+      }
+      return null;
+    });
   }
 
   Future<void> saveAIInsight({

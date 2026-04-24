@@ -39,7 +39,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadAuthUser();
-    _loadFirestoreProfile();
   }
 
   void _loadAuthUser() {
@@ -51,34 +50,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  Future<void> _loadFirestoreProfile() async {
-    final uid = _auth.currentUser!.uid;
-
-    final data = await _firestoreService.getUserProfile(uid);
-
-    if (data != null) {
-      setState(() {
-        age = data['age'] ?? '';
-        gender = data['gender'] ?? '';
-        height = data['height'] ?? '';
-        weight = data['weight'] ?? '';
-      });
+  // ✅ REAL-TIME PROFILE LISTENER
+  Stream<Map<String, dynamic>?> _getUserProfileStream() {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      return Stream.value(null);
     }
+    return _firestoreService.getUserProfileStream(uid);
   }
 
   // =========================
   // DISPLAY HELPERS
   // =========================
-  String get displayAge => age.isEmpty ? 'Please insert the values' : age;
-
-  String get displayGender =>
-      gender.isEmpty ? 'Please insert the values' : gender;
-
-  String get displayHeight =>
-      height.isEmpty ? 'Please insert the values' : height;
-
-  String get displayWeight =>
-      weight.isEmpty ? 'Please insert the values' : weight;
+  // ✅ Now computed dynamically in StreamBuilder
 
   // =========================
   // EDIT + SAVE
@@ -213,6 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // UI
   // =========================
   @override
+  @override
   Widget build(BuildContext context) {
     final r = Responsive.of(context);
     final titleFont = r.s(24, min: 20, max: 30);
@@ -238,19 +223,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildHeader(),
             SizedBox(height: sectionGap),
 
-            SectionCard(
-              title: 'Basic Information',
-              icon: Icons.person,
-              showEditButton: true,
-              onEdit: _editBasicInfo,
-              children: [
-                InfoRow(label: 'Full Name', value: fullName),
-                InfoRow(label: 'Email', value: email),
-                InfoRow(label: 'Age', value: displayAge),
-                InfoRow(label: 'Gender', value: displayGender),
-                InfoRow(label: 'Height', value: displayHeight),
-                InfoRow(label: 'Weight', value: displayWeight),
-              ],
+            // ✅ REAL-TIME PROFILE STREAM
+            StreamBuilder<Map<String, dynamic>?>(
+              stream: _getUserProfileStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return SectionCard(
+                    title: 'Basic Information',
+                    icon: Icons.person,
+                    showEditButton: true,
+                    onEdit: _editBasicInfo,
+                    children: const [
+                      Center(child: CircularProgressIndicator()),
+                    ],
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return SectionCard(
+                    title: 'Basic Information',
+                    icon: Icons.person,
+                    showEditButton: true,
+                    onEdit: _editBasicInfo,
+                    children: [
+                      Text('Error loading profile: ${snapshot.error}'),
+                    ],
+                  );
+                }
+
+                final profileData = snapshot.data;
+                final displayAge = (profileData?['age'] ?? '') as String;
+                final displayGender = (profileData?['gender'] ?? '') as String;
+                final displayHeight = (profileData?['height'] ?? '') as String;
+                final displayWeight = (profileData?['weight'] ?? '') as String;
+
+                final finalAge = displayAge.isEmpty
+                    ? 'Please insert the values'
+                    : displayAge;
+                final finalGender = displayGender.isEmpty
+                    ? 'Please insert the values'
+                    : displayGender;
+                final finalHeight = displayHeight.isEmpty
+                    ? 'Please insert the values'
+                    : displayHeight;
+                final finalWeight = displayWeight.isEmpty
+                    ? 'Please insert the values'
+                    : displayWeight;
+
+                return SectionCard(
+                  title: 'Basic Information',
+                  icon: Icons.person,
+                  showEditButton: true,
+                  onEdit: _editBasicInfo,
+                  children: [
+                    InfoRow(label: 'Full Name', value: fullName),
+                    InfoRow(label: 'Email', value: email),
+                    InfoRow(label: 'Age', value: finalAge),
+                    InfoRow(label: 'Gender', value: finalGender),
+                    InfoRow(label: 'Height', value: finalHeight),
+                    InfoRow(label: 'Weight', value: finalWeight),
+                  ],
+                );
+              },
             ),
 
             SizedBox(height: r.gapV(0.025, min: 14, max: 20)),

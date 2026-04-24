@@ -1,3 +1,8 @@
+// ============================
+// VITALIFE GENKIT BACKEND
+// Region: asia-southeast1 (Singapore)
+// ============================
+
 import * as admin from "firebase-admin";
 import { genkit } from "genkit";
 import { z } from "zod";
@@ -27,10 +32,10 @@ function getAI() {
     aiInstance = genkit({
       plugins: [
         googleAI({
-          apiKey: googleApiKey.value(), // ✅ FIXED
+          apiKey: googleApiKey.value(),
         }),
       ],
-      model: "googleai/gemini-2.5-flash-lite", // consistent model
+      model: "googleai/gemini-2.5-flash-lite",
     });
   }
   return aiInstance;
@@ -112,11 +117,11 @@ const graphOutputSchema = z.object({
 });
 
 /* =========================================================
-   CALLABLE FUNCTIONS
+   CALLABLE FUNCTIONS (SINGAPORE REGION)
 ========================================================= */
 
 export const healthAnalysis = onCall(
-  { secrets: [googleApiKey], cors: true },
+  { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
   async (req) => {
     if (!req.auth) {
       throw new HttpsError("unauthenticated", "Login required");
@@ -140,7 +145,7 @@ export const healthAnalysis = onCall(
 );
 
 export const chronicAnalysis = onCall(
-  { secrets: [googleApiKey], cors: true },
+  { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
   async (req) => {
     if (!req.auth) {
       throw new HttpsError("unauthenticated", "Login required");
@@ -192,7 +197,7 @@ History: ${JSON.stringify(history).slice(0, 2000)}.`,
 );
 
 export const graphAnalysis = onCall(
-  { secrets: [googleApiKey], cors: true },
+  { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
   async (req) => {
     if (!req.auth) {
       throw new HttpsError("unauthenticated", "Login required");
@@ -236,6 +241,7 @@ Tasks:
   },
 );
 
+
 /* =========================================================
    PUSH NOTIFICATION
 ========================================================= */
@@ -243,7 +249,7 @@ Tasks:
 export const sendPushNotification = onDocumentCreated(
   {
     document: "users/{userId}/notifications/{notificationId}",
-    region: "us-central1",
+    region: "asia-southeast1",
   },
   async (event) => {
     const snap = event.data;

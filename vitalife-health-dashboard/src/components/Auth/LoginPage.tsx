@@ -1,20 +1,15 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Heart } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { 
   auth, 
   googleProvider, 
   signInWithPopup, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword 
-} from '../lib/firebase';
+} from '../../lib/firebase';
 
-export function LoginPage() {
+export const LoginPage: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,10 +65,10 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-panel p-8 md:p-12 rounded-[40px] max-w-md w-full text-center relative z-10"
       >
-        <div className="w-16 h-16 bg-vital-400 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-vital-400/20">
-          <Heart size={32} fill="currentColor" />
+        <div className="w-16 h-16 bg-minimal-blue text-white rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-minimal-blue/20">
+          <Activity size={32} />
         </div>
-        <h1 className="text-3xl font-bold mb-2 tracking-tight text-minimal-ink">VitaLife Assistant</h1>
+        <h1 className="text-3xl font-bold mb-2 tracking-tight text-minimal-ink">VitaLifeAssistant</h1>
         <p className="text-minimal-muted mb-8 text-sm leading-relaxed">
           {isRegistering ? 'Create your health account' : 'Welcome back to your health intelligence'}
         </p>
@@ -102,7 +97,7 @@ export function LoginPage() {
             />
           </div>
           
-          {error && <p className="text-xs text-red-500 mt-2 bg-red-50 p-3 rounded-xl border border-red-100 leading-tight">{error}</p>}
+          {error && <p className="text-xs text-red-500 mt-2 bg-red-50 dark:bg-red-950/20 p-3 rounded-xl border border-red-100 dark:border-red-900/30 leading-tight">{error}</p>}
 
           <button 
             type="submit"
@@ -140,4 +135,4 @@ export function LoginPage() {
       </motion.div>
     </div>
   );
-}
+};

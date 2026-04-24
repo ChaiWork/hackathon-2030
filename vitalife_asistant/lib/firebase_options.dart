@@ -41,48 +41,57 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAEBI8l_AlrMSxeL8OoYDyq3xqAT5oIFUU',
-    appId: '1:1026604075454:web:a95f7b83c68e67444c51ef',
-    messagingSenderId: '1026604075454',
-    projectId: 'vitalife-4eb12',
-    authDomain: 'vitalife-4eb12.firebaseapp.com',
-    storageBucket: 'vitalife-4eb12.firebasestorage.app',
-    measurementId: 'G-B70TTWTVME',
+    apiKey: 'AIzaSyC2XTRY7WDauNd6NwboIlKXd5-uwF635vo',
+    appId: '1:569459730762:web:189e0dc4ba8622b56e39b3',
+    messagingSenderId: '569459730762',
+    projectId: 'vitalifebackend',
+    authDomain: 'vitalifebackend.firebaseapp.com',
+    storageBucket: 'vitalifebackend.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC2Ea5t9NeGi8Yx_SsSDYJca0k6eY8sQWs',
-    appId: '1:1026604075454:android:c2a14915e41cdaa44c51ef',
-    messagingSenderId: '1026604075454',
-    projectId: 'vitalife-4eb12',
-    storageBucket: 'vitalife-4eb12.firebasestorage.app',
+    apiKey: 'AIzaSyAATTCJcfcjfRHGX5jNvEPKPs_2QHCbG9o',
+    appId: '1:569459730762:android:418d6e8c73c89e7d6e39b3',
+    messagingSenderId: '569459730762',
+    projectId: 'vitalifebackend',
+    storageBucket: 'vitalifebackend.firebasestorage.app',
+    androidClientId:
+        '569459730762-p2cf5dsh9in4k0f4rrtqgb6ad1r9ef6d.apps.googleusercontent.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAqjCUJiCC7ZJ56W-O3JMF2JQijuaBrDtc',
-    appId: '1:1026604075454:ios:bb1cbe3d629d52ed4c51ef',
-    messagingSenderId: '1026604075454',
-    projectId: 'vitalife-4eb12',
-    storageBucket: 'vitalife-4eb12.firebasestorage.app',
+    apiKey: 'AIzaSyBgbtwUiP1KjF-v6BXMqEa1Q7FpE02ooAk',
+    appId: '1:569459730762:ios:1df68a86dc32838c6e39b3',
+    messagingSenderId: '569459730762',
+    projectId: 'vitalifebackend',
+    storageBucket: 'vitalifebackend.firebasestorage.app',
+    androidClientId:
+        '569459730762-ea8i68r3c49inr6mtok22j79c2btog9t.apps.googleusercontent.com',
+    iosClientId:
+        '569459730762-1om810lhfhjpqos8v2q620l3bdlq1jh3.apps.googleusercontent.com',
     iosBundleId: 'com.example.vitalifeAsistant',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAqjCUJiCC7ZJ56W-O3JMF2JQijuaBrDtc',
-    appId: '1:1026604075454:ios:bb1cbe3d629d52ed4c51ef',
-    messagingSenderId: '1026604075454',
-    projectId: 'vitalife-4eb12',
-    storageBucket: 'vitalife-4eb12.firebasestorage.app',
+    apiKey: 'AIzaSyBgbtwUiP1KjF-v6BXMqEa1Q7FpE02ooAk',
+    appId: '1:569459730762:ios:1df68a86dc32838c6e39b3',
+    messagingSenderId: '569459730762',
+    projectId: 'vitalifebackend',
+    storageBucket: 'vitalifebackend.firebasestorage.app',
+    androidClientId:
+        '569459730762-ea8i68r3c49inr6mtok22j79c2btog9t.apps.googleusercontent.com',
+    iosClientId:
+        '569459730762-1om810lhfhjpqos8v2q620l3bdlq1jh3.apps.googleusercontent.com',
     iosBundleId: 'com.example.vitalifeAsistant',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAEBI8l_AlrMSxeL8OoYDyq3xqAT5oIFUU',
-    appId: '1:1026604075454:web:cf563a11f2a8d9b64c51ef',
-    messagingSenderId: '1026604075454',
-    projectId: 'vitalife-4eb12',
-    authDomain: 'vitalife-4eb12.firebaseapp.com',
-    storageBucket: 'vitalife-4eb12.firebasestorage.app',
-    measurementId: 'G-43HFWWC8JZ',
+    apiKey: 'AIzaSyC2XTRY7WDauNd6NwboIlKXd5-uwF635vo',
+    appId: '1:569459730762:web:d4c1aea7564ebb376e39b3',
+    messagingSenderId: '569459730762',
+    projectId: 'vitalifebackend',
+    authDomain: 'vitalifebackend.firebaseapp.com',
+    storageBucket: 'vitalifebackend.firebasestorage.app',
+    measurementId: 'G-5QL5HFEYMY',
   );
 }

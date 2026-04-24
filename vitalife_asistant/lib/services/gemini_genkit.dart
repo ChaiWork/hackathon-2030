@@ -2,7 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 class GenkitService {
   static const String _functionName = 'healthAnalysis';
-  static const String _region = 'us-central1';
+  static const String _region = 'asia-southeast1';
 
   static Future<Map<String, dynamic>> analyzeHealth({
     required int heartRate,
@@ -15,9 +15,7 @@ class GenkitService {
         options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
       );
 
-      final result = await callable.call({
-        "heartRate": heartRate,
-      });
+      final result = await callable.call({"heartRate": heartRate});
 
       final normalized = _normalizeResponse(result.data);
       if (normalized == null) {

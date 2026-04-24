@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import { genkit } from "genkit";
 import { z } from "zod";
-import { googleAI } from "@genkit-ai/google-genai";
+import { googleAI } from "@genkit-ai/googleai";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { defineSecret } from "firebase-functions/params";
@@ -14,15 +14,20 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
+/**
+ * SECRETS SETUP
+ * The secret handle used in Cloud Functions configuration.
+ */
 const googleApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
 /* =========================================================
-   GENKIT SETUP (GEMINI 3 PRO)
+   GENKIT SETUP
+   Using gemini-2.5-flash for maximum intelligence.
 ========================================================= */
 
 const ai = genkit({
-  plugins: [googleAI()],
-  model: "googleai/gemini-2.5-flash", // ✅ Changed to Gemini 3 Pro
+  plugins: [googleAI()], // Automatically retrieves configured key at runtime
+  model: "googleai/gemini-flash-latest", 
 });
 
 /* =========================================================
@@ -53,29 +58,28 @@ const healthAnalysisFlow = ai.defineFlow(
             : "Low";
 
     const response = await ai.generate({
-      model: "googleai/gemini-2.5-flash", // ✅ Changed to Gemini 3 Pro
-      output: { schema: hrOutputSchema },
-
       prompt: `
 Analyze heart rate: ${input.heartRate} bpm.
 Risk level: ${risk}
 
-Return ONLY JSON:
-- risk
-- explanation (3 sentences)
-- advice (5 sentence)
-- summary (2 sentence)
+Instructions:
+- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical".
+- explanation: 2 sentences explaining the heart rate.
+- advice: 1 actionable health sentence.
+- summary: 1 short summary sentence.
+
+IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. No other text.
       `,
+      output: { schema: hrOutputSchema },
+      config: { temperature: 0.1 },
     });
 
-    if (!response.output) throw new Error("AI returned null output");
-
-    return response.output;
+    return response.output!;
   },
 );
 
 /* =========================================================
-   2. CHRONIC FLOW
+   2. CHRONIC FLOW (RAG)
 ========================================================= */
 
 const chronicOutputSchema = z.object({
@@ -124,34 +128,45 @@ const chronicAnalysisFlow = ai.defineFlow(
     };
 
     const response = await ai.generate({
-      model: "googleai/gemini-2.5-flash", // ✅ Changed to Gemini 3 Pro
-      output: { schema: chronicOutputSchema },
-
       prompt: `
 Analyze patient health data.
 
 CURRENT:
 ${JSON.stringify(input)}
 
-HISTORY:
+HISTORY (Context):
 ${JSON.stringify(history).slice(0, 2000)}
 
-Return ONLY JSON:
-- risk
-- summary paragraph with point
-- long advice
+Instructions:
+- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical". Do not use any other words.
+- summary: max 12 words highlighting the most important trend.
+- advice: clear medical instruction based on current and history data.
+
+IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. Ensure 'risk' strictly matches the enum.
       `,
+      output: { schema: chronicOutputSchema },
+      config: { temperature: 0.1 },
     });
 
-    if (!response.output) throw new Error("AI returned null output");
-
-    return response.output;
+    return response.output!;
   },
 );
 
 /* =========================================================
-   3. GRAPH FLOW
+   3. GRAPH TREND FLOW
 ========================================================= */
+
+const graphOutputSchema = z.object({
+  summary: z.string(),
+  stability: z.number(),
+  trends: z.array(
+    z.object({
+      label: z.string(),
+      change: z.number(),
+      trend: z.enum(["up", "down", "stable"]),
+    }),
+  ),
+});
 
 const graphAnalysisFlow = ai.defineFlow(
   {
@@ -162,53 +177,33 @@ const graphAnalysisFlow = ai.defineFlow(
       metric: z.string(),
       data: z.array(z.any()),
     }),
-    outputSchema: z.object({
-      summary: z.string(),
-      stability: z.number(),
-      trends: z.array(
-        z.object({
-          label: z.string(),
-          change: z.number(),
-          trend: z.enum(["up", "down", "stable"]),
-        }),
-      ),
-    }),
+    outputSchema: graphOutputSchema,
   },
   async (input) => {
-    const result = await ai.generate({
-      model: "googleai/gemini-2.5-flash", // ✅ Changed to Gemini 3 Pro
-      output: {
-        schema: z.object({
-          summary: z.string(),
-          stability: z.number(),
-          trends: z.array(
-            z.object({
-              label: z.string(),
-              change: z.number(),
-              trend: z.enum(["up", "down", "stable"]),
-            }),
-          ),
-        }),
-      },
-
+    const response = await ai.generate({
       prompt: `
 Analyze ${input.metric} trends for ${input.view} view.
 
 DATA:
 ${JSON.stringify(input.data).slice(0, 2000)}
 
-Return ONLY JSON.
+Return:
+- summary: Concise pattern evaluation.
+- stability: (0-100) consistency score.
+- trends: Array of objects with label, percentage change, and direction (direction MUST be "up", "down", or "stable").
+
+IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. No markdown formatting outside of JSON.
       `,
+      output: { schema: graphOutputSchema },
+      config: { temperature: 0.1 },
     });
 
-    if (!result.output) throw new Error("AI returned empty output");
-
-    return result.output;
+    return response.output!;
   },
 );
 
 /* =========================================================
-   CALLABLE FUNCTIONS (rest remains the same)
+   4. CALLABLE FUNCTIONS
 ========================================================= */
 
 export const healthAnalysis = onCall(
@@ -248,7 +243,7 @@ export const graphAnalysis = onCall(
 );
 
 /* =========================================================
-   PUSH NOTIFICATION (remains the same)
+   5. PUSH NOTIFICATION TRIGGER
 ========================================================= */
 
 export const sendPushNotification = onDocumentCreated(

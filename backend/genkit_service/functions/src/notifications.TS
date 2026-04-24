@@ -1,3 +1,5 @@
+// //this is main genkit for app us central
+
 // import * as admin from "firebase-admin";
 // import { genkit } from "genkit";
 // import { z } from "zod";
@@ -44,10 +46,7 @@
 //   const hr = input?.heartRate ?? 72;
 
 //   const risk =
-//     hr > 130 ? "Critical" :
-//     hr > 100 ? "High" :
-//     hr > 90 ? "Moderate" :
-//     "Low";
+//     hr > 130 ? "Critical" : hr > 100 ? "High" : hr > 90 ? "Moderate" : "Low";
 
 //   return {
 //     risk,
@@ -79,13 +78,9 @@
 //   return {
 //     summary: "Trend analysis currently utilizing local statistical modeling.",
 //     stability: 85,
-//     trends: [
-//       { label: "Temporal Stability", change: 0, trend: "stable" },
-//     ],
+//     trends: [{ label: "Temporal Stability", change: 0, trend: "stable" }],
 //   };
 // }
-
-
 
 // /* =========================================================
 //    SCHEMAS
@@ -112,7 +107,7 @@
 //       label: z.string(),
 //       change: z.number(),
 //       trend: z.enum(["up", "down", "stable"]),
-//     })
+//     }),
 //   ),
 //   prediction: z.string(),
 //   advice: z.string(),
@@ -123,8 +118,7 @@
 // ========================================================= */
 
 // export const healthAnalysis = onCall(
-  
-//   { region: "asia-southeast1",secrets: [googleApiKey], cors: true },
+//   { secrets: [googleApiKey], cors: true },
 //   async (req) => {
 //     if (!req.auth) {
 //       throw new HttpsError("unauthenticated", "Login required");
@@ -144,7 +138,7 @@
 //       console.error("Health AI failed:", err);
 //       return fallbackHealthAnalysis(input);
 //     }
-//   }
+//   },
 // );
 
 // export const chronicAnalysis = onCall(
@@ -196,7 +190,7 @@
 //       console.error("Chronic AI failed:", err);
 //       return fallbackChronicAnalysis(input);
 //     }
-//   }
+//   },
 // );
 
 // export const graphAnalysis = onCall(
@@ -241,7 +235,7 @@
 //         advice: "Use historical trend reference.",
 //       };
 //     }
-//   }
+//   },
 // );
 
 // /* =========================================================
@@ -277,14 +271,12 @@
 //         android: {
 //           priority: isEmergency ? "high" : "normal",
 //           notification: {
-//             channelId: isEmergency
-//               ? "emergency_alerts"
-//               : "general_alerts",
+//             channelId: isEmergency ? "emergency_alerts" : "general_alerts",
 //           },
 //         },
 //       });
 //     } catch (e) {
 //       console.error("FCM error:", e);
 //     }
-//   }
+//   },
 // );

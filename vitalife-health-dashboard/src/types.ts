@@ -1,17 +1,20 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { User } from 'firebase/auth';
 
 export interface HeartRateLog {
   id: string;
   heartRate: number;
-  systolic?: number;
-  diastolic?: number;
-  glucose?: number;
   steps?: number;
-  spo2?: number | null;
   createdAt: any; // Firebase Timestamp or ISO string
+}
+
+export interface ChronicVitalLog {
+  id: string;
+  systolic: number;
+  diastolic: number;
+  glucose: number;
+  spo2: number;
+  temperature?: number;
+  createdAt: any;
 }
 
 export interface HeartRateBreakdown {
@@ -31,6 +34,7 @@ export interface UserProfile {
   gender?: string;
   height?: string;
   weight?: string;
+  bmi?: number;
   role?: string;
   lastLogin?: any;
 }
@@ -39,7 +43,8 @@ export interface RiskEntry {
   id: string;
   uid: string;
   date: string;
-  riskLevel: 'low' | 'moderate' | 'high' | 'critical';
+  time?: any; // Added for client-side sorting
+  riskLevel: 'Low' | 'Moderate' | 'High' | 'Critical' | 'low' | 'moderate' | 'high' | 'critical';
   summary: string;
   advice: string;
 }
@@ -47,26 +52,9 @@ export interface RiskEntry {
 export interface AIInsight {
   id: string;
   heartRate: number;
-  systolic?: number;
-  diastolic?: number;
-  glucose?: number;
   risk: string;
   summary: string;
   advice: string;
-  explanation?: string;
-  // Separate sections for split cards
-  hrAnalysis?: {
-    risk: string;
-    summary: string;
-    advice: string;
-    explanation?: string;
-  };
-  bpGlucoseAnalysis?: {
-    risk: string;
-    summary: string;
-    advice: string;
-    explanation?: string;
-  };
   date: any;
   createdAt: any;
 }
@@ -90,5 +78,35 @@ export interface Notification {
   createdAt: any;
 }
 
-export type ChartView = 'daily' | 'weekly' | 'monthly';
-export type Tab = 'dashboard' | 'history' | 'profile';
+export interface BMILog {
+  id: string;
+  bmi: number;
+  weight: number;
+  height: number;
+  createdAt: any;
+}
+
+export interface GraphAIHistory {
+  id: string;
+  metric: string;
+  view: string;
+  summary: string;
+  stability: number;
+  prediction: string;
+  advice: string;
+  trends: { label: string; change: number; trend: string }[];
+  createdAt: any;
+}
+
+export interface VulnerabilityAlert {
+  id: string;
+  patientId: string;
+  patientFullName: string;
+  caregiverId: string;
+  alertType: string;
+  status: "critical" | "warning";
+  createdAt: any;
+  timestamp?: any; // Keeping for compatibility temporarily
+}
+
+export type AuthUser = User;

@@ -19,7 +19,7 @@ class _LoginFormState extends State<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -150,7 +150,9 @@ class _LoginFormState extends State<LoginForm> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(r.s(15, min: 12, max: 16)),
+                    borderRadius: BorderRadius.circular(
+                      r.s(15, min: 12, max: 16),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.2),
@@ -240,8 +242,8 @@ class _LoginFormState extends State<LoginForm> {
       }
 
       // Start interactive sign-in process
-      final GoogleSignInAccount? googleUser = 
-          await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+          .authenticate();
 
       if (googleUser == null) {
         if (mounted) {
@@ -251,24 +253,22 @@ class _LoginFormState extends State<LoginForm> {
       }
 
       // Get authentication tokens
-      final GoogleSignInAuthentication googleAuth = 
-          googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
       // Create Firebase credential
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
-        
       );
 
       // Sign in to Firebase
-      final UserCredential userCredential = 
-          await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
 
       if (!mounted) return;
-      
+
       _showMessage('Welcome ${userCredential.user?.displayName ?? "User"}!');
       Navigator.of(context).pushReplacementNamed('/home');
-      
     } on GoogleSignInException catch (e) {
       print('Google Sign-In Exception: ${e.code} - ${e.description}');
       _showMessage('Google Sign-In failed: ${e.description}');

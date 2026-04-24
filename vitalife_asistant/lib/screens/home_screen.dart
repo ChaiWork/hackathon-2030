@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         _currentHeartRate = data.heartRate;
-        //_callGenkitAI(data);
+        _callGenkitAI(data);
         _isLoading = false;
         _hasPermission = true;
       });

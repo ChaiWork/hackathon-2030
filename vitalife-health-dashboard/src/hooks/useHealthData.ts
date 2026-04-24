@@ -1,304 +1,277 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  db, 
   collection, 
-  doc, 
-  onSnapshot, 
   query, 
   where, 
   orderBy, 
   limit, 
-  User,
-  serverTimestamp,
-  setDoc,
-  handleFirestoreError,
-  OperationType
-} from '../lib/firebase';
+  onSnapshot 
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   HeartRateLog, 
+  ChronicVitalLog,
   HeartRateBreakdown, 
-  RiskEntry, 
   AIInsight, 
   Notification, 
   FamilyLink, 
-  UserProfile 
+  RiskEntry,
+  AuthUser,
+  BMILog,
+  GraphAIHistory,
+  VulnerabilityAlert
 } from '../types';
 
-export function useHealthData(user: User | null) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+export function useHealthData(user: AuthUser | null) {
   const [heartLogs, setHeartLogs] = useState<HeartRateLog[]>([]);
+  const [chronicLogs, setChronicLogs] = useState<ChronicVitalLog[]>([]);
   const [breakdownLogs, setBreakdownLogs] = useState<HeartRateBreakdown[]>([]);
-  const [riskHistory, setRiskHistory] = useState<RiskEntry[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [familyLinks, setFamilyLinks] = useState<FamilyLink[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const lastAlertedId = useRef<string | null>(null);
+  const [riskHistory, setRiskHistory] = useState<RiskEntry[]>([]);
+  const [bmiLogs, setBmiLogs] = useState<BMILog[]>([]);
+  const [chronicInsights, setChronicInsights] = useState<AIInsight[]>([]);
+  const [graphAIHistory, setGraphAIHistory] = useState<GraphAIHistory[]>([]);
+  const [vulnerabilityAlerts, setVulnerabilityAlerts] = useState<VulnerabilityAlert[]>([]);
 
-  // Derive Today's Stats
-  const todayStats = useMemo(() => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    const latestToday = heartLogs.find(log => {
-      const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
-      return logDate >= startOfDay;
-    });
-
-    return {
-      heartRate: latestToday ? latestToday.heartRate : null,
-      systolic: latestToday ? latestToday.systolic : undefined,
-      diastolic: latestToday ? latestToday.diastolic : undefined,
-      glucose: latestToday ? latestToday.glucose : undefined,
-      steps: latestToday ? latestToday.steps : 0,
-      hasDataToday: !!latestToday
-    };
-  }, [heartLogs]);
-
-  // Derive Hourly Breakdown
-  const dailyBreakdown = useMemo(() => {
-    if (breakdownLogs.length > 0) {
-      return Array.from({ length: 24 }, (_, hour) => {
-        const found = breakdownLogs.find(b => b.hour === hour);
-        return {
-          hour: `${hour.toString().padStart(2, '0')}:00`,
-          heartRate: found ? found.heartRate : null,
-          displayRate: found ? found.heartRate : 0
-        };
-      });
-    }
-
-    const buckets: Record<number, number[]> = {};
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    heartLogs.forEach(log => {
-      const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
-      if (logDate >= startOfDay) {
-        const hour = logDate.getHours();
-        if (!buckets[hour]) buckets[hour] = [];
-        buckets[hour].push(log.heartRate);
-      }
-    });
-
-    return Array.from({ length: 24 }, (_, hour) => {
-      const values = buckets[hour];
-      const avg = values && values.length > 0 ? Math.round(values.reduce((a, b) => a + b) / values.length) : null;
-      
-      const logsInHour = heartLogs.filter(log => {
-        const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
-        return logDate >= startOfDay && logDate.getHours() === hour;
-      });
-
-      const avgSys = logsInHour.some(l => l.systolic) ? Math.round(logsInHour.reduce((sum, l) => sum + (l.systolic || 0), 0) / logsInHour.filter(l => l.systolic).length) : null;
-      const avgDia = logsInHour.some(l => l.diastolic) ? Math.round(logsInHour.reduce((sum, l) => sum + (l.diastolic || 0), 0) / logsInHour.filter(l => l.diastolic).length) : null;
-      const avgGluc = logsInHour.some(l => l.glucose) ? Math.round(logsInHour.reduce((sum, l) => sum + (l.glucose || 0), 0) / logsInHour.filter(l => l.glucose).length) : null;
-
-      return {
-        hour: `${hour.toString().padStart(2, '0')}:00`,
-        heartRate: avg,
-        displayRate: avg || 0,
-        systolic: avgSys,
-        diastolic: avgDia,
-        glucose: avgGluc
-      };
-    });
-  }, [heartLogs, breakdownLogs]);
-
-  // Trends
-  const periodicTrends = useMemo(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekDayShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-    const getDailyAverages = (days: number) => {
-      const breakdownHR: Record<string, number[]> = {};
-      const breakdownSys: Record<string, number[]> = {};
-      const breakdownDia: Record<string, number[]> = {};
-      const breakdownGluc: Record<string, number[]> = {};
-      const results = [];
-
-      for (let i = 0; i < days; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - (days - 1 - i));
-        const key = d.toDateString();
-        breakdownHR[key] = [];
-        breakdownSys[key] = [];
-        breakdownDia[key] = [];
-        breakdownGluc[key] = [];
-        
-        let label = '';
-        if (days === 7) label = weekDayShort[d.getDay()];
-        else if (i === 0) label = '-30d';
-        else if (i === 14) label = '-15d';
-        else if (i === days - 1) label = 'Today';
-
-        results.push({ key, label, heartRate: null, systolic: null, diastolic: null, glucose: null });
-      }
-
-      heartLogs.forEach(log => {
-        const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
-        const key = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate()).toDateString();
-        if (breakdownHR[key] !== undefined) {
-          breakdownHR[key].push(log.heartRate);
-          if (log.systolic) breakdownSys[key].push(log.systolic);
-          if (log.diastolic) breakdownDia[key].push(log.diastolic);
-          if (log.glucose) breakdownGluc[key].push(log.glucose);
-        }
-      });
-
-      return results.map(r => {
-        const hVals = breakdownHR[r.key];
-        const sVals = breakdownSys[r.key];
-        const dVals = breakdownDia[r.key];
-        const gVals = breakdownGluc[r.key];
-        
-        return { 
-          ...r, 
-          heartRate: hVals.length > 0 ? Math.round(hVals.reduce((a, b) => a + b) / hVals.length) : null,
-          systolic: sVals.length > 0 ? Math.round(sVals.reduce((a, b) => a + b) / sVals.length) : null,
-          diastolic: dVals.length > 0 ? Math.round(dVals.reduce((a, b) => a + b) / dVals.length) : null,
-          glucose: gVals.length > 0 ? Math.round(gVals.reduce((a, b) => a + b) / gVals.length) : null
-        };
-      });
-    };
-
-    return {
-      weekly: getDailyAverages(7),
-      monthly: getDailyAverages(30)
-    };
-  }, [heartLogs]);
-
-  // Unified History
-  const unifiedHistory = useMemo(() => {
-    const historicalEntries = riskHistory.map(entry => ({
-      id: entry.id,
-      date: entry.date,
-      sortDate: new Date(entry.date).getTime(),
-      risk: entry.riskLevel,
-      summary: entry.summary,
-      advice: entry.advice,
-      heartRate: null,
-      source: 'Standard Analysis'
-    }));
-
-    const aiEntries = aiInsights.map(insight => {
-      const insightDate = insight.date?.toDate ? insight.date.toDate() : new Date(insight.date);
-      return {
-        id: insight.id,
-        date: insightDate.toLocaleDateString(),
-        sortDate: insightDate.getTime(),
-        risk: insight.risk,
-        summary: insight.summary,
-        advice: insight.advice,
-        heartRate: insight.heartRate,
-        source: 'AI Insight'
-      };
-    });
-
-    return [...historicalEntries, ...aiEntries].sort((a, b) => b.sortDate - a.sortDate);
-  }, [riskHistory, aiInsights]);
-
-  // Listeners
+  // Listen for Heart Rate Logs
   useEffect(() => {
     if (!user) return;
-
-    const unsubProfile = onSnapshot(doc(db, 'users', user.uid), (d) => {
-      if (d.exists()) setProfile(d.data() as UserProfile);
-    });
-
-    const unsubLogs = onSnapshot(query(collection(db, 'users', user.uid, 'heart_rate_logs'), orderBy('createdAt', 'desc'), limit(500)), (snapshot) => {
-      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as any)).map(data => ({
-        id: data.id,
-        heartRate: data.heartRate || data.heart_rate_logs || data.bpm || data.value || 0,
-        systolic: data.systolic,
-        diastolic: data.diastolic,
-        glucose: data.glucose,
-        steps: data.steps || 0,
-        spo2: data.spo2,
-        createdAt: data.createdAt || data.timestamp || null
-      } as HeartRateLog));
+    const q = query(
+      collection(db, 'users', user.uid, 'heart_rate_logs'),
+      orderBy('createdAt', 'desc'),
+      limit(500)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => {
+        const data = d.data();
+        const rate = data.heartRate || data.bpm || data.value || 0;
+        return { id: d.id, heartRate: rate, ...data } as HeartRateLog;
+      });
       setHeartLogs(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}/heart_rate_logs`);
     });
-
-    const unsubInsights = onSnapshot(query(collection(db, 'users', user.uid, 'ai_insights'), orderBy('createdAt', 'desc'), limit(10)), (snapshot) => {
-      setAiInsights(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight)));
-    });
-
-    const unsubNotifications = onSnapshot(query(collection(db, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc'), limit(20)), (snapshot) => {
-      setNotifications(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
-    });
-
-    const unsubFamily = onSnapshot(query(collection(db, 'users', user.uid, 'family_links')), (snapshot) => {
-      setFamilyLinks(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FamilyLink)));
-    });
-
-    return () => {
-      unsubProfile();
-      unsubLogs();
-      unsubInsights();
-      unsubNotifications();
-      unsubFamily();
-    };
+    return () => unsubscribe();
   }, [user]);
 
-  // Emergency Monitoring
+  // Listen for Heart Rate Breakdown
   useEffect(() => {
-    if (!user || heartLogs.length === 0) return;
-    const latest = heartLogs[0];
-    const logDate = latest.createdAt?.toDate ? latest.createdAt.toDate() : new Date(latest.createdAt);
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-    const isEmergency = latest.heartRate < 40 || latest.heartRate > 130;
+    if (!user) return;
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const q = query(
+      collection(db, 'users', user.uid, 'heart_rate_breakdown'),
+      where('date', '>=', startOfDay),
+      orderBy('date', 'desc'),
+      limit(24)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as HeartRateBreakdown));
+      // Sort client-side by hour to ensure chronological breakdown display without requiring a composite index
+      const sortedLogs = [...logs].sort((a, b) => a.hour - b.hour);
+      setBreakdownLogs(sortedLogs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/heart_rate_breakdown`);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
-    if (logDate > tenMinutesAgo && isEmergency && lastAlertedId.current !== latest.id) {
-       const alertFamily = async () => {
-         lastAlertedId.current = latest.id;
-         const notifRef = doc(collection(db, 'users', user.uid, 'notifications'));
-         await setDoc(notifRef, {
-           title: 'Critical Heart Rate Alert',
-           message: `Emergency: Detected heart rate of ${latest.heartRate} BPM.`,
-           type: 'emergency',
-           read: false,
-           createdAt: serverTimestamp()
-         });
-         
-         // Alert family member
-         familyLinks.forEach(async (link) => {
-           const familyNotifRef = doc(collection(db, 'users', link.memberUid, 'notifications'));
-           await setDoc(familyNotifRef, {
-             title: `Emergency Alert: ${user.displayName || 'Family Member'}`,
-             message: `Critical: Dangerous heart rate of ${latest.heartRate} BPM detected.`,
-             type: 'emergency',
-             read: false,
-             createdAt: serverTimestamp()
-           });
-         });
-       };
-       alertFamily();
+  // Listen for Chronic Vital Logs
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'chronicVital_log'),
+      orderBy('createdAt', 'desc'),
+      limit(500)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChronicVitalLog));
+      setChronicLogs(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}/chronicVital_log`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for AI Insights
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'users', user.uid, 'ai_insights'), orderBy('createdAt', 'desc'), limit(5));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const insights = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight));
+      setAiInsights(insights);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/ai_insights`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Notifications
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'notifications'), 
+      limit(20)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
+      // Sort client-side to avoid index requirement
+      const sortedData = [...data].sort((a, b) => {
+        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return timeB - timeA;
+      });
+      setNotifications(sortedData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/notifications`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Family Links
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'users', user.uid, 'family_links'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FamilyLink));
+      setFamilyLinks(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/family_links`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Risk History
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'risk_history'), 
+      where('uid', '==', user.uid), 
+      limit(50)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RiskEntry));
+      // Sort client-side by date/time to avoid composite index requirement
+      const sortedData = [...data].sort((a, b) => {
+        const timeA = a.time?.toDate ? a.time.toDate().getTime() : 0;
+        const timeB = b.time?.toDate ? b.time.toDate().getTime() : 0;
+        return timeB - timeA;
+      });
+      setRiskHistory(sortedData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `risk_history`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for BMI Logs
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'bmi_logs'),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BMILog));
+      setBmiLogs(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/bmi_logs`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Chronic AI Insights
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'chronic_vitals_insights'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const insights = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight));
+      setChronicInsights(insights);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/chronic_vitals_insights`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Graph AI History
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'graph_ai_history'),
+      orderBy('createdAt', 'desc'),
+      limit(200)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as GraphAIHistory));
+      setGraphAIHistory(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/graph_ai_history`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Vulnerability Alerts (Caregiver only)
+  useEffect(() => {
+    if (!user) {
+      setVulnerabilityAlerts([]);
+      return;
     }
-  }, [user, heartLogs, familyLinks]);
+    
+    const q = query(
+      collection(db, 'vulnerability_alerts'),
+      where('caregiverId', '==', user.uid),
+      limit(50)
+    );
+    
+    console.log(`Setting up real-time vulnerability listener for caregiver: ${user.uid}`);
 
-  const refreshData = () => {
-    setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 1500);
-  };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      
+      console.log(`Received ${snapshot.docs.length} raw alerts from Firestore.`);
+
+      const alerts = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() } as VulnerabilityAlert))
+        .filter(a => {
+          const dateRef = a.createdAt || a.timestamp;
+          const time = dateRef?.toDate ? dateRef.toDate().getTime() : (dateRef ? new Date(dateRef).getTime() : 0);
+          const isRecent = (now - time) < twentyFourHours;
+          return isRecent;
+        })
+        .sort((a, b) => {
+          const timeA = (a.createdAt || a.timestamp)?.toDate ? (a.createdAt || a.timestamp).toDate().getTime() : 0;
+          const timeB = (b.createdAt || b.timestamp)?.toDate ? (b.createdAt || b.timestamp).toDate().getTime() : 0;
+          return timeB - timeA;
+        });
+      
+      console.log(`Filtered to ${alerts.length} recent alerts (last 24h).`);
+      setVulnerabilityAlerts(alerts);
+    }, (error) => {
+      console.warn('Vulnerability alerts real-time fetch failed:', error);
+    });
+    
+    return () => unsubscribe();
+  }, [user]);
 
   return {
-    profile,
     heartLogs,
-    todayStats,
-    dailyBreakdown,
-    periodicTrends,
-    unifiedHistory,
+    chronicLogs,
+    breakdownLogs,
     aiInsights,
     notifications,
     familyLinks,
-    isSyncing,
-    refreshData
+    riskHistory,
+    bmiLogs,
+    chronicInsights,
+    graphAIHistory,
+    vulnerabilityAlerts
   };
 }

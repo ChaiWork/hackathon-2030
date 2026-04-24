@@ -26,16 +26,17 @@ import {
   getDocs,
   getDocFromServer,
   getDocsFromServer,
+  addDoc,
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
-export const functions = getFunctions(app, 'us-central1');
+export const functions = getFunctions(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Utility for operation types
@@ -122,8 +123,8 @@ export {
   onSnapshot,
   getDocs,
   getDocsFromServer,
+  addDoc,
   Timestamp,
-  serverTimestamp,
-  httpsCallable
+  serverTimestamp
 };
 export type { User };
