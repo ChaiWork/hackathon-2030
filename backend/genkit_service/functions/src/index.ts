@@ -21,9 +21,7 @@ if (!admin.apps.length) {
 
 const googleApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
-/* =========================================================
-   GENKIT LAZY SETUP
-========================================================= */
+
 
 let aiInstance: any = null;
 
