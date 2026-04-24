@@ -1,8 +1,7 @@
 {
   "projects": {
-    "default": "vitalifebackend",
-    "BackendVitalife": "vitalifebackend"
-  },
-  "targets": {},
-  "etags": {}
+    "default": "vitalife-4eb12"
+  }
 }
+
+
