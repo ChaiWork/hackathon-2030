@@ -66,5 +66,22 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	
+	<!-- ============================================ -->
+	<!-- HEALTHKIT PERMISSIONS                        -->
+	<!-- ============================================ -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>We need access to your health data (heart rate, blood oxygen, steps) to monitor your vitals and provide personalized insights.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We need permission to read your health data from HealthKit to sync with Firebase.</string>
+	
+	<!-- ============================================ -->
+	<!-- BACKGROUND MODES                             -->
+	<!-- ============================================ -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

@@ -6,6 +6,8 @@ import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_info_row.dart';
 import 'package:vitalife_asistant/screens/widgets_screen/profile_screen_widget/_section_card.dart';
 import 'package:vitalife_asistant/services/firestore_service.dart';
+import 'package:vitalife_asistant/services/background_health_sync_service.dart';
+import 'package:vitalife_asistant/services/sync_preferences.dart';
 import 'package:vitalife_asistant/ui/responsive.dart';
 // IMPORT SERVICE
 
@@ -197,7 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // UI
   // =========================
   @override
-  @override
   Widget build(BuildContext context) {
     final r = Responsive.of(context);
     final titleFont = r.s(24, min: 20, max: 30);
@@ -289,6 +290,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             SizedBox(height: r.gapV(0.025, min: 14, max: 20)),
 
+            // ✅ SYNC STATUS CARD
+            _buildSyncStatusCard(r),
+
+            SizedBox(height: r.gapV(0.025, min: 14, max: 20)),
+
             ActionButton(
               label: 'Logout',
               icon: Icons.logout,
@@ -302,6 +308,118 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  // =========================
+  // SYNC STATUS CARD
+  // =========================
+  Widget _buildSyncStatusCard(Responsive r) {
+    return SectionCard(
+      title: 'Health Data Sync',
+      icon: Icons.cloud_sync,
+      showEditButton: false,
+      children: [
+        FutureBuilder<Map<String, dynamic>>(
+          future: BackgroundHealthSyncService.getSyncStatus(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            }
+
+            final syncData = snapshot.data ?? {};
+            final lastSync = syncData['lastSync'] as DateTime?;
+            final syncCount = syncData['syncCount'] as int? ?? 0;
+
+            return Column(
+              children: [
+                // Status indicator
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Auto-syncing enabled',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Last sync time
+                if (lastSync != null)
+                  InfoRow(label: 'Last Sync', value: _formatSyncTime(lastSync))
+                else
+                  InfoRow(label: 'Last Sync', value: 'Never'),
+
+                // Sync count
+                SizedBox(height: 8),
+                InfoRow(label: 'Total Syncs', value: syncCount.toString()),
+
+                const SizedBox(height: 16),
+
+                // Manual sync button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await BackgroundHealthSyncService.syncNow();
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Health data synced ✅"),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text("Sync Now"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryDeep,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  String _formatSyncTime(DateTime? dateTime) {
+    if (dateTime == null) return 'Never';
+
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    }
   }
 
   // =========================

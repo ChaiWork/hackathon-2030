@@ -31,11 +31,15 @@ import 'package:flutter/material.dart';
 import 'package:vitalife_asistant/firebase_options.dart';
 import 'package:vitalife_asistant/screens/auth_screen.dart';
 import 'package:vitalife_asistant/screens/home_screen.dart';
+import 'package:vitalife_asistant/services/background_health_sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ✅ Initialize background health data sync
+  await BackgroundHealthSyncService.initializeBackgroundSync();
 
   runApp(MyApp());
 }
