@@ -205,4 +205,4 @@ firebase deploy --only functions
 
 ## License
 
-Add a license if you plan to open-source this project.
+
