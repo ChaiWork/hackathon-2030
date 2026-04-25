@@ -21,8 +21,6 @@ if (!admin.apps.length) {
 
 const googleApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
-
-
 let aiInstance: any = null;
 
 function getAI() {
@@ -98,6 +96,10 @@ const chronicOutputSchema = z.object({
   risk: z.enum(["Low", "Moderate", "High", "Critical"]),
   summary: z.string(),
   advice: z.string(),
+  clinicalSummary: z.string(),
+  futureRisks: z.string(),
+  medications: z.string(),
+  prevention: z.string(),
 });
 
 const graphOutputSchema = z.object({
@@ -181,7 +183,22 @@ export const chronicAnalysis = onCall(
 
       const response = await ai.generate({
         output: { schema: chronicOutputSchema },
-        prompt: `Analyze chronic data.
+        prompt: `>> Analyze patient health data and provide a professional clinical assessment.
+>> 
+>> CURRENT READING:
+>> ${JSON.stringify(input)}
+>> 
+>> PATIENT HISTORY (Context):
+>> ${JSON.stringify(history).slice(0, 2000)}
+>> 
+>> Instructions:
+>> - risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical".
+>> - summary: A very brief (max 15 words) high-level statement of the current status.
+>> - clinicalSummary: A professional, detailed clinical summary of the patient's current health conditions based on the vitals provided.
+>> - futureRisks: Identification of potential diseases or conditions that might occur in the future if current trends continue.
+>> - advice: Professional medical advice/instructions delivered in a formal, professional tone.
+>> - medications: General classes or types of medications that might be relevant (include a disclaimer that this is AI-suggested and needs physician verification).
+>> - prevention: Clear, actionable preventative measures to improve health outcomes..
 Current: ${JSON.stringify(input)}.
 History: ${JSON.stringify(history).slice(0, 2000)}.`,
       });
@@ -238,7 +255,6 @@ Tasks:
     }
   },
 );
-
 
 /* =========================================================
    PUSH NOTIFICATION
