@@ -1,4 +1,7 @@
-// //this is main genkit for app us central
+// // ============================
+// // VITALIFE GENKIT BACKEND
+// // Region: asia-southeast1 (Singapore)
+// // ============================
 
 // import * as admin from "firebase-admin";
 // import { genkit } from "genkit";
@@ -18,9 +21,7 @@
 
 // const googleApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
-// /* =========================================================
-//    GENKIT LAZY SETUP
-// ========================================================= */
+
 
 // let aiInstance: any = null;
 
@@ -29,10 +30,10 @@
 //     aiInstance = genkit({
 //       plugins: [
 //         googleAI({
-//           apiKey: googleApiKey.value(), // ✅ FIXED
+//           apiKey: googleApiKey.value(),
 //         }),
 //       ],
-//       model: "googleai/gemini-2.5-flash-lite", // consistent model
+//       model: "googleai/gemini-2.5-flash-lite",
 //     });
 //   }
 //   return aiInstance;
@@ -114,11 +115,11 @@
 // });
 
 // /* =========================================================
-//    CALLABLE FUNCTIONS
+//    CALLABLE FUNCTIONS (SINGAPORE REGION)
 // ========================================================= */
 
 // export const healthAnalysis = onCall(
-//   { secrets: [googleApiKey], cors: true },
+//   { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
 //   async (req) => {
 //     if (!req.auth) {
 //       throw new HttpsError("unauthenticated", "Login required");
@@ -142,7 +143,7 @@
 // );
 
 // export const chronicAnalysis = onCall(
-//   { secrets: [googleApiKey], cors: true },
+//   { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
 //   async (req) => {
 //     if (!req.auth) {
 //       throw new HttpsError("unauthenticated", "Login required");
@@ -194,7 +195,7 @@
 // );
 
 // export const graphAnalysis = onCall(
-//   { secrets: [googleApiKey], cors: true },
+//   { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
 //   async (req) => {
 //     if (!req.auth) {
 //       throw new HttpsError("unauthenticated", "Login required");
@@ -238,6 +239,7 @@
 //   },
 // );
 
+
 // /* =========================================================
 //    PUSH NOTIFICATION
 // ========================================================= */
@@ -245,7 +247,7 @@
 // export const sendPushNotification = onDocumentCreated(
 //   {
 //     document: "users/{userId}/notifications/{notificationId}",
-//     region: "us-central1",
+//     region: "asia-southeast1",
 //   },
 //   async (event) => {
 //     const snap = event.data;
