@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny for safety
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Global Helper Functions
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == "pchairispum@gmail.com");
+    }
+
+    // Caregiver logic: check if the target user has shared access with the current user
+    function isCaregiver(userId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(userId)/family_links/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // ===============================================================
+    // Validation Helpers
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string;
+    }
+
+    function isValidVitalsLog(data) {
+      // Flexible validation as the app might send heartRate or bpm
+      return (data.get('heartRate', 0) is number || data.get('bpm', 0) is number) &&
+             (data.createdAt is timestamp || data.createdAt is string);
+    }
+
+    function isValidVulnerabilityAlert(data) {
+      return data.keys().hasAll(['patientId', 'patientFullName', 'caregiverId', 'alertType', 'status', 'createdAt']) &&
+             data.patientId is string &&
+             data.caregiverId is string &&
+             data.status in ['critical', 'warning'];
+    }
+
+    // ===============================================================
+    // Rules for Collections
+    // ===============================================================
+
+    match /users/{userId} {
+      // Profile access: owner, caregiver, or admin
+      allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+      // Allow searching for users by email (needed for adding family members)
+      // Note: this allows collection group search if matched correctly
+      allow list: if isSignedIn(); 
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Vital Logs (Heart Rate, Steps)
+      match /heart_rate_logs/{logId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidVitalsLog(request.resource.data);
+        allow update, delete: if isOwner(userId) || isAdmin();
+      }
+
+      // Chronic Vitals (BP, Glucose, SpO2)
+      match /chronicVital_log/{logId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update, delete: if isOwner(userId) || isAdmin();
+      }
+
+      // Aggregated Breakdown Data
+      match /heart_rate_breakdown/{breakdownId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      // AI Analysis Result Collections
+      match /ai_insights/{insightId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /chronic_vitals_insights/{insightId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /graph_ai_history/{historyId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /bmi_logs/{logId} {
+        allow read: if isOwner(userId) || isCaregiver(userId) || isAdmin();
+        allow create: if isOwner(userId);
+      }
+
+      // Notifications
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId) || isAdmin();
+        // Allow creating notifications if linked (caregiver can alert patient or system can alert)
+        allow create: if isOwner(userId) || isAdmin() || isCaregiver(userId);
+        allow update: if isOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      // Family/Linkage setup
+      match /family_links/{linkId} {
+        allow read: if isOwner(userId) || isAdmin();
+        // Allow write if you are the one setting up the link or if you are being linked
+        allow write: if isOwner(userId) || isAdmin() || (isSignedIn() && linkId == request.auth.uid);
+      }
+    }
+
+    // Top-level risk history tracking
+    match /risk_history/{riskId} {
+      allow read: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+
+    // Connection integrity test
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Vulnerability Alerts (SOS, etc)
+    match /vulnerability_alerts/{alertId} {
+      // Allow read if user is the caregiver or the patient
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.caregiverId || request.auth.uid == resource.data.patientId || isAdmin());
+      // Allow list specifically filtered by caregiverId
+      allow list: if isSignedIn() && (request.query.limit <= 100 && (request.auth.uid == resource.data.caregiverId || isAdmin()));
+      // Allow create if user is the patient
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.patientId && isValidVulnerabilityAlert(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+  }
+}

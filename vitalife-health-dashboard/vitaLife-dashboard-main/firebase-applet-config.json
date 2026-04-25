@@ -1,0 +1,10 @@
+{
+  "projectId": "vitalifebackend",
+  "appId": "1:569459730762:web:189e0dc4ba8622b56e39b3",
+  "apiKey": "AIzaSyC2XTRY7WDauNd6NwboIlKXd5-uwF635vo",
+  "authDomain": "vitalifebackend.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "vitalifebackend.firebasestorage.app",
+  "messagingSenderId": "569459730762",
+  "measurementId": ""
+}
