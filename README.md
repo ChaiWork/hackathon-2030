@@ -1,4 +1,4 @@
-# VitalIfe (Hackathon 2030)
+# Vitalife (Hackathon 2030)
 
 ## Executive Summary
 
