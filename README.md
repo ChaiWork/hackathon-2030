@@ -1,4 +1,4 @@
-# Vitalife (Hackathon 2030)
+# VitaLife Assistant  (Hackathon 2030)
 
 ## Executive Summary
 
